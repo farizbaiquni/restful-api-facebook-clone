@@ -1,0 +1,11 @@
+# NPM
+node_modules/
+node_modules
+package-lock.json
+
+# Log files
+*.log
+
+# Environment variables
+.env*
+.env
