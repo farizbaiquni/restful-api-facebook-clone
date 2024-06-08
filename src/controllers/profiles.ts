@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
-import { getProfileByIdModel } from "../models/profiles";
+import { getProfileModel } from "../models/profiles";
 
 export const getProfileById = async (req: Request, res: Response) => {
   const userId: number = 1;
   try {
-    const [results, fields] = await getProfileByIdModel(userId);
+    const [results, fields] = await getProfileModel(userId);
     res.json((results as any)[0]);
   } catch (error) {
     res

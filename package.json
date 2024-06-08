@@ -5,24 +5,33 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon src/index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "migrate-models": "sequelize model:generate --name Gender --attributes gender_name:string --force && sequelize model:generate --name Users --attributes first_name:string,last_name:string,email:string,password_hash:string,profile_picture:string,cover_photo:string,bio:text,birth_date:date,gender_id:integer --force && sequelize model:generate --name AudienceType --attributes audience_type_name:string --force && sequelize model:generate --name Posts --attributes user_id:integer,content:text,emoji:string,activity_icon_url:string,gif_url:string,latitude:decimal,longitude:decimal,location_name:string,audience_type_id:integer --force && sequelize model:generate --name MediaType --attributes media_type_name:string --force && sequelize model:generate --name Media --attributes post_id:integer,media_type_id:integer,media_url:string --force && sequelize model:generate --name TaggedUsers --attributes post_id:integer,user_id:integer --force && sequelize model:generate --name Comments --attributes post_id:integer,parent_comment_id:integer,user_id:integer,content:text --force && sequelize model:generate --name CommentMedia --attributes comment_id:integer,media_type_id:integer,media_url:string --force && sequelize model:generate --name Friendships --attributes user_id:integer,friend_id:integer,status:enum --options.enum 'Pending,Accepted,Declined' --force && sequelize model:generate --name Reactions --attributes reaction_name:string --force && sequelize model:generate --name PostReactions --attributes user_id:integer,post_id:integer,reaction_id:integer --force && sequelize model:generate --name CommentReactions --attributes user_id:integer,comment_id:integer,reaction_id:integer --force && sequelize model:generate --name Messages --attributes sender_id:integer,receiver_id:integer,content:text --force && sequelize model:generate --name AudienceExclude --attributes post_id:integer,user_id:integer --force && sequelize model:generate --name AudienceInclude --attributes post_id:integer,user_id:integer --force",
+    "create-db-migrate": "sequelize db:create && sequelize db:migrate"
   },
   "author": "Muhammad Fariz Baiquni",
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.2",
+    "cookie": "^0.6.0",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.10.0",
-    "nodemon": "^3.1.2"
+    "nodemon": "^3.1.2",
+    "sequelize": "^6.37.3"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
+    "@types/cookie": "^0.6.0",
+    "@types/cookie-parser": "^1.4.7",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.14.0",
+    "sequelize-cli": "^6.6.2",
     "typescript": "^5.4.5"
   }
 }

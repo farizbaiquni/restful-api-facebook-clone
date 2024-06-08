@@ -1,23 +1,29 @@
 import * as dotenv from "dotenv";
 dotenv.config();
+
 import mysql from "mysql2/promise";
+import { ENV } from "./config";
 
-// Pastikan variabel lingkungan diambil sebagai string
-const DB_HOST = process.env.DB_HOST;
-const DB_USER = process.env.DB_USER;
-const DB_PASSWORD = process.env.DB_PASSWORD;
-const DB_NAME = process.env.DB_NAME;
+type ConfigType = {
+  username: string;
+  password: string;
+  database: string;
+  host: string;
+  dialect: string;
+};
 
-if (!DB_HOST || !DB_USER || !DB_PASSWORD || !DB_NAME) {
+const config: ConfigType = require("../../config/config.json")[ENV];
+
+if (!config.host || !config.username || !config.password || !config.database) {
   throw new Error("Missing required environment variables");
 }
 
 // Buat koneksi pool ke database
 const pool = mysql.createPool({
-  host: DB_HOST,
-  user: DB_USER,
-  password: DB_PASSWORD,
-  database: DB_NAME,
+  host: config.host,
+  user: config.username,
+  password: config.password,
+  database: config.database,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
