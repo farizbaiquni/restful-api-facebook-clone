@@ -5,6 +5,7 @@ import { routerUsers } from "./routes/users";
 import { authenticate } from "./middlewares/authenticate";
 import { profileRouter } from "./routes/profiles";
 import { verifyTokenJWTRouter } from "./routes/verifyTokenJWT";
+import { postsRouter } from "./routes/posts";
 
 const app = express();
 app.use(cookieParser());
@@ -22,6 +23,9 @@ app.use(bodyParser.json());
 
 // Users
 app.use(routerUsers);
+
+// Posts
+app.use(postsRouter);
 
 // Profiles
 app.use("/profile", authenticate, profileRouter);

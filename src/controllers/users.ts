@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { getConnection } from "../configs/database";
 import { UserType, loginModelType } from "../types/UserType";
 import { signUpModel, loginModel, getUserByIdModel } from "../models/users";
 import { ENV, JWT_SECRET_KEY } from "../configs/config";
