@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { PostType } from "../types/PostType";
-import addPostModel from "../models/posts";
+import { AddPostType } from "../types/PostType";
+import { addPostModel, getPostsModel } from "../models/posts";
 
 export const addPost = async (req: Request, res: Response) => {
   const {
     user_id,
-    content,
+    content = "",
     emoji,
     activity_icon_url,
     gif_url,
@@ -13,19 +13,19 @@ export const addPost = async (req: Request, res: Response) => {
     longitude,
     location_name,
     audience_type_id,
-    media,
-    audience_include,
-    audience_exclude,
+    media = [],
+    audience_include = [],
+    audience_exclude = [],
   } = req.body;
 
-  if (!user_id || !content) {
+  if (!user_id) {
     return res.status(400).json({
       error: 400,
-      message: "User id or audience type id or content not found",
+      message: "User id or audience type id not found",
     });
   }
 
-  const postData: PostType = {
+  const postData: AddPostType = {
     user_id: user_id,
     content: content,
     emoji: emoji,
@@ -53,7 +53,21 @@ export const addPost = async (req: Request, res: Response) => {
         error: "500",
         message: "Internal server error",
         details: error,
-        postData: postData,
+      },
+    });
+  }
+};
+
+export const getPosts = async (req: Request, res: Response) => {
+  try {
+    const [results] = await getPostsModel();
+    return res.status(200).json({ status: 200, results: results });
+  } catch (error) {
+    return res.status(500).json({
+      error: {
+        error: "500",
+        message: "Internal server error",
+        details: error,
       },
     });
   }

@@ -6,6 +6,7 @@ import { authenticate } from "./middlewares/authenticate";
 import { profileRouter } from "./routes/profiles";
 import { verifyTokenJWTRouter } from "./routes/verifyTokenJWT";
 import { postsRouter } from "./routes/posts";
+import { postReactionsRouter } from "./routes/postReactions";
 
 const app = express();
 app.use(cookieParser());
@@ -27,13 +28,11 @@ app.use(routerUsers);
 // Posts
 app.use(postsRouter);
 
+// Post Reactions
+app.use(postReactionsRouter);
+
 // Profiles
 app.use("/profile", authenticate, profileRouter);
-
-// Check hello world
-// app.use("/", (req: Request, res: Response) => {
-//   res.status(200).send("Hello world!");
-// });'
 
 // Verify token JWT
 app.use(verifyTokenJWTRouter);

@@ -1,4 +1,4 @@
-export type PostType = {
+export type AddPostType = {
   user_id: number;
   content: string;
   emoji?: string;
