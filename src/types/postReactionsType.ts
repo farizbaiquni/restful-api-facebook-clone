@@ -12,8 +12,13 @@ export type GetPostReactionType = {
   reaction_name: string;
 };
 
-export type AddPostReactionsType = {
+export type AddPostReactionType = {
   user_id: number;
   post_id: number;
   reaction_id: number;
+};
+
+export type DeletePostReactionType = {
+  user_id: number;
+  post_id: number;
 };

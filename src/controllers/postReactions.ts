@@ -17,10 +17,11 @@ import {
 import {
   GetPostReactionType,
   GetTop3PostReactionsType,
-  AddPostReactionsType,
+  AddPostReactionType,
+  DeletePostReactionType,
 } from "../types/postReactionsType";
 
-// ====== Function to get top 3 post reactions of a post ======
+// ====== Function to get top 3 post reactions ======
 export const getTop3PostReactions = async (req: Request, res: Response) => {
   const requiredParams = ["postId"];
 
@@ -66,7 +67,7 @@ export const getTop3PostReactions = async (req: Request, res: Response) => {
   }
 };
 
-// ====== Function to get reactions of a post by user id ======
+// ====== Function to get post reaction ======
 export const getPostReaction = async (req: Request, res: Response) => {
   const requiredParams = ["userId", "postId"];
 
@@ -113,7 +114,7 @@ export const getPostReaction = async (req: Request, res: Response) => {
   }
 };
 
-// ====== Function to get reactions of a post by user id ======
+// ====== Function to add post reaction ======
 export const addPostReaction = async (req: Request, res: Response) => {
   const requiredParams = ["user_id", "post_id", "reaction_id"];
 
@@ -131,7 +132,7 @@ export const addPostReaction = async (req: Request, res: Response) => {
 
   try {
     const response = await addPostReactionModel(user_id, post_id, reaction_id);
-    const successObject: SuccessResponseType<AddPostReactionsType> = {
+    const successObject: SuccessResponseType<AddPostReactionType> = {
       status: "success",
       code: 200,
       message: "Add post reaction successful",
@@ -148,29 +149,36 @@ export const addPostReaction = async (req: Request, res: Response) => {
   }
 };
 
+// ====== Function to delete a post reactions  ======
 export const deletePostReaction = async (req: Request, res: Response) => {
-  const { user_id, post_id } = req.body;
+  const requiredParams = ["user_id", "post_id"];
 
-  if (!user_id || !post_id) {
-    return res.status(400).json({
-      error: 400,
-      message: "Please provide all required fields",
-    });
+  if (!req.body.user_id || !req.body.post_id) {
+    const errors: ErrorType[] = validateParams(req.body, requiredParams);
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
   }
+
+  const { user_id, post_id } = req.body;
 
   try {
     const response = await deletePostReactionModel(user_id, post_id);
-    return res.status(200).json({
-      status: 200,
-      message: "Add post reaction successful",
-      data: { user_id, post_id },
-    });
-  } catch (error) {
-    return res.status(500).json({
-      error: {
-        error: "500",
-        message: "Internal server error",
+    const successObject: SuccessResponseType<DeletePostReactionType> = {
+      status: "success",
+      code: 200,
+      message: "Delete post reaction successful",
+      data: {
+        user_id,
+        post_id,
       },
-    });
+      pagination: null,
+    };
+    return res.status(200).json(successObject);
+  } catch (error) {
+    return res.status(500).json(DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER);
   }
 };
