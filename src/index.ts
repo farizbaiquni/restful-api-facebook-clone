@@ -7,6 +7,7 @@ import { profileRouter } from "./routes/profiles";
 import { verifyTokenJWTRouter } from "./routes/verifyTokenJWT";
 import { postsRouter } from "./routes/posts";
 import { postReactionsRouter } from "./routes/postReactions";
+import { commmentsRouter } from "./routes/comments";
 
 const app = express();
 app.use(cookieParser());
@@ -30,6 +31,9 @@ app.use(postsRouter);
 
 // Post Reactions
 app.use(postReactionsRouter);
+
+// Comments
+app.use(commmentsRouter);
 
 // Profiles
 app.use("/profile", authenticate, profileRouter);

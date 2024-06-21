@@ -2,14 +2,14 @@ import { Router } from "express";
 import {
   addPostReaction,
   deletePostReaction,
-  getPostReactionsByUserId,
-  getTop3PostReactionsByPostId,
+  getPostReaction,
+  getTop3PostReactions,
 } from "../controllers/postReactions";
 
 const router = Router();
 
-router.get("/v1/posts/:postId/top-3-reactions", getTop3PostReactionsByPostId);
-router.get("/v1/:userId/:postId/post-reactions", getPostReactionsByUserId);
+router.get("/v1/post-reactions/top-3-reactions", getTop3PostReactions);
+router.get("/v1/post-reactions", getPostReaction);
 router.post("/v1/post-reactions", addPostReaction);
 router.delete("/v1/post-reactions", deletePostReaction);
 

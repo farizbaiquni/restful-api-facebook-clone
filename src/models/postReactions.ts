@@ -1,6 +1,6 @@
 import { getConnection } from "../configs/database";
 
-export const getTop3PostReactionsByPostIdModel = async (post_id: number) => {
+export const getTop3PostReactionsModel = async (post_id: number) => {
   let connection;
   try {
     connection = await getConnection();
@@ -27,7 +27,7 @@ export const getTop3PostReactionsByPostIdModel = async (post_id: number) => {
   }
 };
 
-export const getPostReactionsByUserIdModel = async (
+export const getPostReactionModel = async (
   user_id: number,
   post_id: number
 ) => {

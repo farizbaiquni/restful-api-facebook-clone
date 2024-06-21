@@ -18,7 +18,7 @@ export const addPost = async (req: Request, res: Response) => {
     audience_exclude = [],
   } = req.body;
 
-  if (!user_id) {
+  if (!user_id || !audience_type_id) {
     return res.status(400).json({
       error: 400,
       message: "User id or audience type id not found",
