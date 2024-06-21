@@ -1,8 +1,18 @@
 import { Request, Response } from "express";
-import { AddPostType } from "../types/PostType";
+import { AddPostType, GetPostType } from "../types/PostType";
 import { addPostModel, getPostsModel } from "../models/posts";
+import {
+  DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER,
+  ErrorResponseType,
+  ErrorStatusEnum,
+  ErrorType,
+  SuccessResponseType,
+  validateParams,
+  validateParamsAsNumber,
+} from "../types/Responses";
 
 export const addPost = async (req: Request, res: Response) => {
+  const requiredParams = ["user_id", "audience_type_id"];
   const {
     user_id,
     content = "",
@@ -19,13 +29,16 @@ export const addPost = async (req: Request, res: Response) => {
   } = req.body;
 
   if (!user_id || !audience_type_id) {
-    return res.status(400).json({
-      error: 400,
-      message: "User id or audience type id not found",
-    });
+    const errors: ErrorType[] = validateParams(req.query, requiredParams);
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
   }
 
-  const postData: AddPostType = {
+  const post: AddPostType = {
     user_id: user_id,
     content: content,
     emoji: emoji,
@@ -39,36 +52,55 @@ export const addPost = async (req: Request, res: Response) => {
 
   try {
     const response = await addPostModel(
-      postData,
+      post,
       media,
       audience_include,
       audience_exclude
     );
-    return res
-      .status(200)
-      .json({ status: 200, message: "Add post successful" });
+    const successObject: SuccessResponseType<AddPostType | null> = {
+      status: "success",
+      code: 200,
+      message: "Get post reactions by user id successful",
+      data: post,
+      pagination: null,
+    };
+    return res.status(200).json(successObject);
   } catch (error) {
-    return res.status(500).json({
-      error: {
-        error: "500",
-        message: "Internal server error",
-        details: error,
-      },
-    });
+    return res.status(500).json({ error: error });
   }
 };
 
 export const getPosts = async (req: Request, res: Response) => {
+  const requiredParams = ["offset"];
+  const limit: number = 5;
+
+  let { offset = 0 } = req.query;
+  offset = Number(offset);
+
+  if (isNaN(offset)) {
+    const errors: ErrorType[] = validateParamsAsNumber(
+      req.query,
+      requiredParams
+    );
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
   try {
-    const [results] = await getPostsModel();
-    return res.status(200).json({ status: 200, results: results });
+    const response: any[] = await getPostsModel(offset, limit);
+    const successObject: SuccessResponseType<GetPostType[]> = {
+      status: "success",
+      code: 200,
+      message: "Get posts successful",
+      data: response[0] as GetPostType[],
+      pagination: null,
+    };
+    return res.status(200).json(successObject);
   } catch (error) {
-    return res.status(500).json({
-      error: {
-        error: "500",
-        message: "Internal server error",
-        details: error,
-      },
-    });
+    return res.status(500).json({ error: error });
   }
 };

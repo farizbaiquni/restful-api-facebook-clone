@@ -3,7 +3,7 @@ import { addPost, getPosts } from "../controllers/posts";
 
 const router = Router();
 
-router.get("/posts", getPosts);
-router.post("/posts", addPost);
+router.get("/v1/posts", getPosts);
+router.post("/v1/posts", addPost);
 
 export const postsRouter = router;

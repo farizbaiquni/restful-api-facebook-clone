@@ -53,12 +53,12 @@ export const getTop3PostReactions = async (req: Request, res: Response) => {
   }
 
   try {
-    const response = await getTop3PostReactionsModel(postId);
+    const response: any[] = await getTop3PostReactionsModel(postId);
     const successObject: SuccessResponseType<GetTop3PostReactionsType> = {
       status: "success",
       code: 200,
       message: "Get top 3 post reactions successful",
-      data: response[0] as unknown as GetTop3PostReactionsType,
+      data: response[0] as GetTop3PostReactionsType,
       pagination: null,
     };
     return res.status(200).json(successObject);
@@ -99,13 +99,12 @@ export const getPostReaction = async (req: Request, res: Response) => {
 
   try {
     const response: any[] = await getPostReactionModel(userId, postId);
-    const successObject: SuccessResponseType<GetPostReactionType | null> = {
+    console.log(response[0]);
+    const successObject: SuccessResponseType<GetPostReactionType> = {
       status: "success",
       code: 200,
       message: "Get post reactions by user id successful",
-      data: !response[0][0]
-        ? null
-        : (response[0][0] as unknown as GetPostReactionType),
+      data: response[0][0] as GetPostReactionType,
       pagination: null,
     };
     return res.status(200).json(successObject);

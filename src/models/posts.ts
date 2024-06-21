@@ -12,6 +12,7 @@ export const addPostModel = async (
   let connection;
   try {
     connection = await getConnection();
+
     const sqlAddPostTable = `INSERT INTO Posts SET ?`;
     const sqlAddMediaTable = `INSERT INTO Media SET ?`;
     const sqlAddAudienceIncludeTable = `INSERT INTO AudienceInclude SET ?`;
@@ -19,11 +20,9 @@ export const addPostModel = async (
 
     await connection.beginTransaction();
 
-    // Insert post and get the inserted post_id
     const [result]: any = await connection.query(sqlAddPostTable, post);
     const postId = Number(result.insertId);
 
-    // Insert media related to the post
     for (const data of media) {
       const mediaObj: MediaTableType = {
         post_id: postId,
@@ -33,7 +32,6 @@ export const addPostModel = async (
       await connection.query(sqlAddMediaTable, mediaObj);
     }
 
-    // Insert audience include related to the post
     for (const data of audienceInclude) {
       const audienceObj: AudienceTableType = {
         post_id: postId,
@@ -42,7 +40,6 @@ export const addPostModel = async (
       await connection.query(sqlAddAudienceIncludeTable, audienceObj);
     }
 
-    // Insert audience exclude related to the post
     for (const data of audienceExclude) {
       const audienceObj: AudienceTableType = {
         post_id: postId,
@@ -51,19 +48,16 @@ export const addPostModel = async (
       await connection.query(sqlAddAudienceExcludeTable, audienceObj);
     }
 
-    await connection.commit();
-
-    return postId;
+    return await connection.commit();
   } catch (error) {
     if (connection) await connection.rollback();
-    console.error("Database query error:", error);
     throw error;
   } finally {
     if (connection) connection.release();
   }
 };
 
-export const getPostsModel = async () => {
+export const getPostsModel = async (offset: number, limit: number) => {
   let connection;
   try {
     connection = await getConnection();
@@ -108,11 +102,12 @@ export const getPostsModel = async () => {
       COALESCE((SELECT COUNT(*) FROM post_shares ps WHERE ps.post_id = p.post_id), 0) AS total_shares
     FROM posts p 
     JOIN users u ON p.user_id = u.user_id 
-    WHERE p.audience_type_id = ?
+    WHERE p.audience_type_id = ? AND p.post_id > ?
     GROUP BY p.post_id, p.user_id, p.content, p.emoji, p.activity_icon_url, p.gif_url, p.latitude, p.longitude, p.location_name, p.audience_type_id, p.created_at, p.updated_at, u.first_name, u.last_name, u.profile_picture 
-    ORDER BY p.created_at DESC;`;
+    ORDER BY p.created_at DESC
+    LIMIT ?;`;
 
-    return connection.query(sqlQuery, [2]);
+    return await connection.query(sqlQuery, [2, offset, limit]);
   } catch (error) {
     throw error;
   } finally {
