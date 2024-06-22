@@ -64,17 +64,20 @@ export const addPost = async (req: Request, res: Response) => {
   };
 
   try {
-    const response = await addPostModel(
+    const response: any[] = await addPostModel(
       post,
       media,
       audience_include,
       audience_exclude
     );
-    const successObject: SuccessResponseType<AddPostType | null> = {
+
+    console.log("ADDED NEW POST : ", response);
+
+    const successObject: SuccessResponseType<GetPostType | null> = {
       status: "success",
       code: 200,
       message: "Add post successful",
-      data: post,
+      data: response[0][0],
       pagination: null,
     };
     return res.status(200).json(successObject);
@@ -84,16 +87,28 @@ export const addPost = async (req: Request, res: Response) => {
 };
 
 export const getPosts = async (req: Request, res: Response) => {
-  const requiredParams = ["offset"];
-  const limit: number = 1;
+  const requiredParams = ["userId"];
+  const requiredParamsAreNumber = ["offset", "userId"];
+  const limit: number = 5;
+
+  if (!req.query.userId) {
+    const errors: ErrorType[] = validateParams(req.query, requiredParams);
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
 
   let { offset = 0 } = req.query;
   offset = Number(offset);
+  const userId = Number(req.query.userId);
 
-  if (isNaN(offset)) {
+  if (isNaN(offset) || isNaN(userId)) {
     const errors: ErrorType[] = validateParamsAsNumber(
       req.query,
-      requiredParams
+      requiredParamsAreNumber
     );
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
@@ -104,14 +119,17 @@ export const getPosts = async (req: Request, res: Response) => {
   }
 
   try {
-    const response: any[] = await getPostsModel(offset, limit);
+    const response: any[] = await getPostsModel(offset, limit, userId);
     const posts: GetPostType[] = response[0];
     let hasNextPage: boolean = false;
     let nextId: number | null = null;
+
     if (posts.length > limit) {
       hasNextPage = true;
       nextId = posts[posts.length - 1].post_id;
+      response[0].pop();
     }
+
     const pagination: Pagination = {
       hasNextPage: hasNextPage,
       nextId: nextId,
@@ -162,7 +180,6 @@ export const deletePost = async (req: Request, res: Response) => {
 
   try {
     const response: any[] = await deletePostModel(postId, userId);
-    console.log(response[0]);
     if (response[0].affectedRows === 0) {
       const errors: ErrorType[] = [
         {
