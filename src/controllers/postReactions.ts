@@ -19,7 +19,7 @@ import {
   GetTop3PostReactionsType,
   AddPostReactionType,
   DeletePostReactionType,
-} from "../types/postReactionsType";
+} from "../types/PostReactionsType";
 
 // ====== Function to get top 3 post reactions ======
 export const getTop3PostReactions = async (req: Request, res: Response) => {
@@ -165,7 +165,23 @@ export const deletePostReaction = async (req: Request, res: Response) => {
   const { user_id, post_id } = req.body;
 
   try {
-    const response = await deletePostReactionModel(user_id, post_id);
+    const response: any[] = await deletePostReactionModel(user_id, post_id);
+
+    if (response[0].affectedRows === 0) {
+      const errors: ErrorType[] = [
+        {
+          type: "not found",
+          message: "resource not found",
+        },
+      ];
+      const errorObject: ErrorResponseType = {
+        status: ErrorStatusEnum.RESOURCE_NOT_FOUND,
+        code: 404,
+        errors: errors,
+      };
+      return res.status(404).json(errorObject);
+    }
+
     const successObject: SuccessResponseType<DeletePostReactionType> = {
       status: "success",
       code: 200,

@@ -49,3 +49,18 @@ export type GetPostType = {
   total_comments: number;
   total_shares: number;
 };
+
+export type DeletePostType = {
+  post_id: number;
+  user_id: number;
+};
+
+export type UndoDeletePostType = {
+  post_id: number;
+  user_id: number;
+};
+
+export type UndoDeleteMultiplePostsType = {
+  post_id_array: number[];
+  user_id: number;
+};

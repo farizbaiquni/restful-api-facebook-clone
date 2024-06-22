@@ -102,13 +102,76 @@ export const getPostsModel = async (offset: number, limit: number) => {
       COALESCE((SELECT COUNT(*) FROM post_shares ps WHERE ps.post_id = p.post_id), 0) AS total_shares
     FROM posts p 
     JOIN users u ON p.user_id = u.user_id 
-    WHERE p.audience_type_id = ? AND p.post_id > ?
+    WHERE p.audience_type_id = ? AND p.post_id > ? AND p.is_deleted = 0
     GROUP BY p.post_id, p.user_id, p.content, p.emoji, p.activity_icon_url, p.gif_url, p.latitude, p.longitude, p.location_name, p.audience_type_id, p.created_at, p.updated_at, u.first_name, u.last_name, u.profile_picture 
     ORDER BY p.created_at DESC
     LIMIT ?;`;
 
-    return await connection.query(sqlQuery, [2, offset, limit]);
+    return await connection.query(sqlQuery, [2, offset, limit + 1]);
   } catch (error) {
+    throw error;
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
+export const deletePostModel = async (postId: number, userId: number) => {
+  let connection;
+  try {
+    connection = await getConnection();
+    const querySoftDeletePost = `
+      UPDATE posts
+      SET is_deleted = 1, deleted_at = NOW()
+      WHERE post_id = ? AND user_id = ? AND is_deleted = 0`;
+
+    return await connection.execute(querySoftDeletePost, [postId, userId]);
+  } catch (error) {
+    console.error("Database query error:", error);
+    throw error;
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
+export const undoDeletePostModel = async (postId: number, userId: number) => {
+  let connection;
+  try {
+    connection = await getConnection();
+    const undoDeletePostQuery = `
+      UPDATE posts
+      SET is_deleted = 0, deleted_at = NULL
+      WHERE post_id = ? AND user_id = ? AND is_deleted = 1`;
+    return await connection.execute(undoDeletePostQuery, [postId, userId]);
+  } catch (error) {
+    throw error;
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
+export const undoDeleteMultiplePostsModel = async (
+  postIds: number[],
+  userId: number
+) => {
+  let connection;
+  try {
+    connection = await getConnection();
+
+    // Membuat placeholder untuk post IDs
+    const placeholders = postIds.map(() => "?").join(",");
+
+    // Query untuk mengubah nilai is_deleted menjadi 0 untuk multiple post IDs
+    const undoDeleteMultiplePostsQuery = `
+      UPDATE posts
+      SET is_deleted = 0, deleted_at = NULL
+      WHERE post_id IN (${placeholders}) AND user_id = ? AND is_deleted = 1`;
+
+    return await connection.execute(undoDeleteMultiplePostsQuery, [
+      ...postIds,
+      userId,
+    ]);
+  } catch (error) {
+    console.error("Database query error:", error);
     throw error;
   } finally {
     if (connection) connection.release();

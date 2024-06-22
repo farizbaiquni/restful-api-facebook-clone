@@ -1,11 +1,24 @@
 import { Request, Response } from "express";
-import { AddPostType, GetPostType } from "../types/PostType";
-import { addPostModel, getPostsModel } from "../models/posts";
+import {
+  AddPostType,
+  DeletePostType,
+  GetPostType,
+  UndoDeletePostType,
+  UndoDeleteMultiplePostsType,
+} from "../types/PostType";
+import {
+  addPostModel,
+  deletePostModel,
+  getPostsModel,
+  undoDeleteMultiplePostsModel,
+  undoDeletePostModel,
+} from "../models/posts";
 import {
   DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER,
   ErrorResponseType,
   ErrorStatusEnum,
   ErrorType,
+  Pagination,
   SuccessResponseType,
   validateParams,
   validateParamsAsNumber,
@@ -60,7 +73,7 @@ export const addPost = async (req: Request, res: Response) => {
     const successObject: SuccessResponseType<AddPostType | null> = {
       status: "success",
       code: 200,
-      message: "Get post reactions by user id successful",
+      message: "Add post successful",
       data: post,
       pagination: null,
     };
@@ -72,7 +85,7 @@ export const addPost = async (req: Request, res: Response) => {
 
 export const getPosts = async (req: Request, res: Response) => {
   const requiredParams = ["offset"];
-  const limit: number = 5;
+  const limit: number = 1;
 
   let { offset = 0 } = req.query;
   offset = Number(offset);
@@ -92,11 +105,271 @@ export const getPosts = async (req: Request, res: Response) => {
 
   try {
     const response: any[] = await getPostsModel(offset, limit);
+    const posts: GetPostType[] = response[0];
+    let hasNextPage: boolean = false;
+    let nextId: number | null = null;
+    if (posts.length > limit) {
+      hasNextPage = true;
+      nextId = posts[posts.length - 1].post_id;
+    }
+    const pagination: Pagination = {
+      hasNextPage: hasNextPage,
+      nextId: nextId,
+    };
+
     const successObject: SuccessResponseType<GetPostType[]> = {
       status: "success",
       code: 200,
       message: "Get posts successful",
       data: response[0] as GetPostType[],
+      pagination: nextId !== null ? pagination : null,
+    };
+
+    return res.status(200).json(successObject);
+  } catch (error) {
+    return res.status(500).json(DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER);
+  }
+};
+
+export const deletePost = async (req: Request, res: Response) => {
+  const requiredParams = ["postId", "userId"];
+
+  if (!req.query.postId || !req.query.userId) {
+    const errors: ErrorType[] = validateParams(req.query, requiredParams);
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
+  const postId = Number(req.query.postId);
+  const userId = Number(req.query.userId);
+
+  if (isNaN(postId) || isNaN(userId)) {
+    const errors: ErrorType[] = validateParamsAsNumber(
+      req.query,
+      requiredParams
+    );
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
+  try {
+    const response: any[] = await deletePostModel(postId, userId);
+    console.log(response[0]);
+    if (response[0].affectedRows === 0) {
+      const errors: ErrorType[] = [
+        {
+          type: "not found",
+          message: "resource not found",
+        },
+      ];
+      const errorObject: ErrorResponseType = {
+        status: ErrorStatusEnum.RESOURCE_NOT_FOUND,
+        code: 404,
+        errors: errors,
+      };
+      return res.status(404).json(errorObject);
+    }
+    const dataObject: DeletePostType = {
+      post_id: postId,
+      user_id: userId,
+    };
+    const successObject: SuccessResponseType<DeletePostType> = {
+      status: "success",
+      code: 200,
+      message: "Delete post successful",
+      data: dataObject,
+      pagination: null,
+    };
+    return res.status(200).json(successObject);
+  } catch (error) {
+    return res.status(500).json({ error: error });
+  }
+};
+
+export const undoDeletePost = async (req: Request, res: Response) => {
+  const requiredParams = ["postId", "userId"];
+
+  if (!req.body.postId || !req.body.userId) {
+    const errors: ErrorType[] = validateParams(req.body, requiredParams);
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
+  const postId = Number(req.body.postId);
+  const userId = Number(req.body.userId);
+
+  if (isNaN(postId) || isNaN(userId)) {
+    const errors: ErrorType[] = validateParamsAsNumber(
+      req.body,
+      requiredParams
+    );
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
+  try {
+    const response: any[] = await undoDeletePostModel(postId, userId);
+    if (response[0].affectedRows === 0) {
+      const errors: ErrorType[] = [
+        {
+          type: "not found",
+          message: "resource not found",
+        },
+      ];
+      const errorObject: ErrorResponseType = {
+        status: ErrorStatusEnum.RESOURCE_NOT_FOUND,
+        code: 404,
+        errors: errors,
+      };
+      return res.status(404).json(errorObject);
+    }
+    const dataObject: UndoDeletePostType = {
+      post_id: postId,
+      user_id: userId,
+    };
+    const successObject: SuccessResponseType<UndoDeletePostType> = {
+      status: "success",
+      code: 200,
+      message: "Undo delete a post successful",
+      data: dataObject,
+      pagination: null,
+    };
+    return res.status(200).json(successObject);
+  } catch (error) {
+    return res.status(500).json({ error: error });
+  }
+};
+
+export const undoMultipleDeletePosts = async (req: Request, res: Response) => {
+  const requiredParams = ["postIdArr", "userId"];
+  const requiredParamsAreNumber = ["userId"];
+
+  function checkAllPostIdArrAreNumbers(stringArray: string[]): boolean {
+    return stringArray.every((stringElement) => !isNaN(Number(stringElement)));
+  }
+
+  if (!req.body.postIdArr || !req.body.userId) {
+    const errors: ErrorType[] = validateParams(req.body, requiredParams);
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
+  if (!Array.isArray(req.body.postIdArr)) {
+    const errors: ErrorType[] = [
+      {
+        field: "postIdArr",
+        type: "validate",
+        message: "Parameter postIdArr is no an array",
+      },
+    ];
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
+  const postIdArrAny: any[] = req.body.postIdArr as any[];
+
+  if (postIdArrAny.length === 0) {
+    const errors: ErrorType[] = [
+      {
+        field: "postIdArr",
+        type: "validate",
+        message: "Parameter postIdArr is empty",
+      },
+    ];
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
+  if (!checkAllPostIdArrAreNumbers(postIdArrAny)) {
+    const errors: ErrorType[] = [
+      {
+        field: "postIdArr",
+        type: "validate",
+        message: "Not all elements of postIdArr are numbers",
+      },
+    ];
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
+  const postIdArr: number[] = postIdArrAny.map((data) => Number(data));
+  const userId = Number(req.body.userId);
+
+  if (isNaN(userId)) {
+    const errors: ErrorType[] = validateParamsAsNumber(
+      req.body,
+      requiredParamsAreNumber
+    );
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
+  try {
+    const response: any[] = await undoDeleteMultiplePostsModel(
+      postIdArr,
+      userId
+    );
+
+    if (response[0].affectedRows === 0) {
+      const errors: ErrorType[] = [
+        {
+          type: "not found",
+          message: "resource not found",
+        },
+      ];
+      const errorObject: ErrorResponseType = {
+        status: ErrorStatusEnum.RESOURCE_NOT_FOUND,
+        code: 404,
+        errors: errors,
+      };
+      return res.status(404).json(errorObject);
+    }
+
+    const dataObject: UndoDeleteMultiplePostsType = {
+      post_id_array: postIdArr,
+      user_id: userId,
+    };
+    const successObject: SuccessResponseType<UndoDeleteMultiplePostsType> = {
+      status: "success",
+      code: 200,
+      message: "Undo multiple delete posts successful",
+      data: dataObject,
       pagination: null,
     };
     return res.status(200).json(successObject);
