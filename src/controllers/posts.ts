@@ -26,6 +26,17 @@ import {
 
 export const addPost = async (req: Request, res: Response) => {
   const requiredParams = ["user_id", "audience_type_id"];
+
+  if (!req.body.user_id || !req.body.audience_type_id) {
+    const errors: ErrorType[] = validateParams(req.query, requiredParams);
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
   const {
     user_id,
     content = "",
@@ -40,16 +51,6 @@ export const addPost = async (req: Request, res: Response) => {
     audience_include = [],
     audience_exclude = [],
   } = req.body;
-
-  if (!user_id || !audience_type_id) {
-    const errors: ErrorType[] = validateParams(req.query, requiredParams);
-    const errorObject: ErrorResponseType = {
-      status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
-      errors: errors,
-    };
-    return res.status(400).json(errorObject);
-  }
 
   const post: AddPostType = {
     user_id: user_id,
@@ -70,8 +71,6 @@ export const addPost = async (req: Request, res: Response) => {
       audience_include,
       audience_exclude
     );
-
-    console.log("ADDED NEW POST : ", response);
 
     const successObject: SuccessResponseType<GetPostType | null> = {
       status: "success",

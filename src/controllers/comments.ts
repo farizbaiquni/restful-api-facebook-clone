@@ -1,84 +1,163 @@
 import { Request, Response } from "express";
-import { CommentTableType, GetCommentsType } from "../types/CommentType";
-import { addCommentModel, getCommentsByPostIdModel } from "../models/comments";
+import {
+  AddCommentType,
+  DeleteCommentType,
+  GetCommentType,
+} from "../types/CommentType";
+import {
+  addCommentModel,
+  deleteCommentModel,
+  getCommentsByPostIdModel,
+} from "../models/comments";
+import {
+  DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER,
+  ErrorResponseType,
+  ErrorStatusEnum,
+  ErrorType,
+  SuccessResponseType,
+  validateParams,
+  validateParamsAsNumber,
+} from "../types/Responses";
 
+// Function to add comment to post
 export const addComment = async (req: Request, res: Response) => {
+  const requiredParams = ["user_id", "post_id"];
+
+  if (!req.body.user_id || !req.body.post_id) {
+    const errors: ErrorType[] = validateParams(req.query, requiredParams);
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
   const {
     user_id,
     post_id,
-    parent_comment_id,
+    parent_comment_id = null,
     content = "",
-    media_type_id,
-    media_url,
+    media_type_id = null,
+    media_url = null,
   } = req.body;
 
-  if (!user_id || !post_id) {
-    return res.status(400).json({
-      error: 400,
-      message: "User id or post id not found",
-    });
+  const userId = Number(user_id);
+  const postId = Number(post_id);
+
+  if ((media_type_id === null || media_url === null) && content.length <= 0) {
+    const errors: ErrorType[] = [
+      {
+        field: "content, media_type_id, media_url",
+        type: "validate",
+        message: "There is no content or media attached",
+      },
+    ];
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.RESOURCE_NOT_FOUND,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
   }
 
-  const comment: CommentTableType = {
-    post_id: post_id,
+  if (isNaN(userId) || isNaN(postId)) {
+    const errors: ErrorType[] = validateParamsAsNumber(
+      req.query,
+      requiredParams
+    );
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
+  const comment: AddCommentType = {
+    post_id: postId,
     parent_comment_id: parent_comment_id,
-    user_id: user_id,
+    user_id: userId,
     content: content,
   };
 
   try {
-    const response = await addCommentModel(comment, media_type_id, media_url);
-    return res
-      .status(200)
-      .json({ status: 200, message: "Add comment successful", data: response });
+    const response: any = await addCommentModel(
+      comment,
+      media_type_id,
+      media_url
+    );
+    const successObject: SuccessResponseType<GetCommentType> = {
+      status: "success",
+      code: 200,
+      message: "Add post successful",
+      data: response[0][0],
+      pagination: null,
+    };
+    return res.status(200).json(successObject);
   } catch (error) {
-    return res.status(500).json({
-      error: {
-        error: "500",
-        message: "Internal server error",
-        details: error,
-      },
-    });
+    return res.status(500).json({ error: error });
   }
 };
 
+// Function to get comments by post id
 export const getCommentsByPostId = async (req: Request, res: Response) => {
+  const requiredParams = ["postId"];
+  const requiredParamsAreNumber = ["postId", "offset", "limit"];
+
   if (!req.query.postId) {
-    return res.status(400).json({
-      error: 400,
-      status: "invalid_parameter",
-      message: "Please provide the required postId",
-    });
+    const errors: ErrorType[] = validateParams(req.query, requiredParams);
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
   }
 
-  const postId = Number(req.query.postId);
-  const limit = Number(req.query.limit);
-  const offset = Number(req.query.offset);
+  let { offset = 0, limit = 5 } = req.query;
 
-  if (isNaN(limit) || isNaN(offset) || isNaN(postId)) {
-    return res.status(400).json({
-      error: 400,
-      status: "invalid_parameter",
-      message: "Paramater is not a number",
-    });
+  const postId = Number(req.query.postId);
+  offset = Number(offset);
+  limit = Number(limit);
+
+  if (isNaN(postId) || isNaN(offset) || isNaN(limit)) {
+    const errors: ErrorType[] = validateParamsAsNumber(
+      req.query,
+      requiredParamsAreNumber
+    );
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
   }
 
   try {
-    const response = await getCommentsByPostIdModel(postId, limit, offset);
-    const results: any[] = response[0];
+    const response: any[] = await getCommentsByPostIdModel(
+      postId,
+      limit,
+      offset
+    );
+    const comments: GetCommentType[] = response[0];
 
     let nextCommentId: number | null = null;
 
-    if (results.length > limit) {
-      nextCommentId = results[results.length - 1].comment_id;
-      results.pop();
+    if (comments.length > limit) {
+      nextCommentId = comments[comments.length - 1].comment_id;
+      comments.pop();
     }
 
-    return res.status(200).json({
-      status: 200,
-      message: "Get comments successful",
-      data: { result: results, next: nextCommentId },
-    });
+    const successObject: SuccessResponseType<GetCommentType[]> = {
+      status: "success",
+      code: 200,
+      message: "get comments successful",
+      data: comments,
+      pagination: null,
+    };
+
+    return res.status(200).json(successObject);
   } catch (error) {
     console.log("ERROR");
     return res.status(500).json({
@@ -88,5 +167,70 @@ export const getCommentsByPostId = async (req: Request, res: Response) => {
         detail: error,
       },
     });
+  }
+};
+
+// Function to delete comment
+export const deleteComment = async (req: Request, res: Response) => {
+  const requiredParams = ["commentId", "userId"];
+
+  if (!req.query.commentId || !req.query.userId) {
+    const errors: ErrorType[] = validateParams(req.query, requiredParams);
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
+  const commentId = Number(req.query.commentId);
+  const userId = Number(req.query.userId);
+
+  if (isNaN(commentId) || isNaN(userId)) {
+    const errors: ErrorType[] = validateParamsAsNumber(
+      req.query,
+      requiredParams
+    );
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
+  try {
+    const response: any[] = await deleteCommentModel(commentId, userId);
+
+    if (response[0].affectedRows === 0) {
+      const errors: ErrorType[] = [
+        {
+          type: "not found",
+          message: "resource not found",
+        },
+      ];
+      const errorObject: ErrorResponseType = {
+        status: ErrorStatusEnum.RESOURCE_NOT_FOUND,
+        code: 404,
+        errors: errors,
+      };
+      return res.status(404).json(errorObject);
+    }
+
+    const dataObject: DeleteCommentType = {
+      comment_id: commentId,
+      user_id: userId,
+    };
+    const successObject: SuccessResponseType<DeleteCommentType> = {
+      status: "success",
+      code: 200,
+      message: "Delete a comment successful",
+      data: dataObject,
+      pagination: null,
+    };
+    return res.status(200).json(successObject);
+  } catch (error) {
+    return res.status(500).json({ error: error });
   }
 };

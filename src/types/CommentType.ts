@@ -1,24 +1,24 @@
-export type CommentTableType = {
+export type AddCommentType = {
   post_id: number;
   parent_comment_id: number;
   user_id: number;
   content: string;
 };
 
-export type CommentMedia = {
-  comment_media_id: number;
-  media_type_id: number;
-  media_url: string;
-};
-
-export type GetCommentsType = {
+export type GetCommentType = {
   comment_id: number;
   post_id: number;
   parent_comment_id: number | null;
+  content: string | null;
   user_id: number;
-  content: string;
-  created_at: Date;
-  updated_at: Date;
-  media: CommentMedia | null;
+  created_at: string;
+  updated_at: string;
+  media_type_id: number;
+  media_url: number;
   total_replies: number;
+};
+
+export type DeleteCommentType = {
+  comment_id: number;
+  user_id: number;
 };
