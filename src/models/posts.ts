@@ -147,7 +147,7 @@ export const getPostsModel = async (
           'angry', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 7 AND pr.is_deleted = 0), 0),
           'total', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.is_deleted = 0), 0)
       ) AS reactions,
-      COALESCE((SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id), 0) AS total_comments,
+      COALESCE((SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id AND c.is_deleted = 0), 0) AS total_comments,
       COALESCE((SELECT COUNT(*) FROM post_shares ps WHERE ps.post_id = p.post_id), 0) AS total_shares
     FROM posts p 
     JOIN users u ON p.user_id = u.user_id 
@@ -156,7 +156,7 @@ export const getPostsModel = async (
     ORDER BY p.created_at DESC
     LIMIT ?;`;
 
-    return await connection.query(sqlQuery, [2, offset, userId, 1]);
+    return await connection.query(sqlQuery, [2, offset, userId, limit + 1]);
   } catch (error) {
     throw error;
   } finally {

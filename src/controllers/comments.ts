@@ -9,6 +9,7 @@ import {
   addCommentModel,
   deleteCommentModel,
   getCommentsByPostIdModel,
+  getInitialCommentModel,
   updateCommentModel,
 } from "../models/comments";
 import {
@@ -16,6 +17,7 @@ import {
   ErrorResponseType,
   ErrorStatusEnum,
   ErrorType,
+  Pagination,
   SuccessResponseType,
   validateParams,
   validateParamsAsNumber,
@@ -102,12 +104,67 @@ export const addComment = async (req: Request, res: Response) => {
   }
 };
 
+export const getInitialComment = async (req: Request, res: Response) => {
+  const requiredParams = ["postId", "userId"];
+  const requiredParamsAreNumber = ["postId", "userId"];
+
+  if (!req.query.postId && !req.query.user_id) {
+    const errors: ErrorType[] = validateParams(req.query, requiredParams);
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
+  const postId = Number(req.query.postId);
+  const userId = Number(req.query.userId);
+
+  if (isNaN(postId) || isNaN(userId)) {
+    const errors: ErrorType[] = validateParamsAsNumber(
+      req.query,
+      requiredParamsAreNumber
+    );
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
+  try {
+    const response: any[] = await getInitialCommentModel(postId, userId);
+
+    const comments: GetCommentType[] = response[0];
+
+    const successObject: SuccessResponseType<GetCommentType[]> = {
+      status: "success",
+      code: 200,
+      message: "get comments successful",
+      data: comments,
+      pagination: null,
+    };
+
+    return res.status(200).json(successObject);
+  } catch (error) {
+    return res.status(500).json({
+      error: {
+        error: "500",
+        message: "Internal server error",
+        detail: error,
+      },
+    });
+  }
+};
+
 // Function to get comments by post id
 export const getCommentsByPostId = async (req: Request, res: Response) => {
-  const requiredParams = ["postId"];
-  const requiredParamsAreNumber = ["postId", "offset", "limit"];
+  const requiredParams = ["postId", "userId"];
+  const requiredParamsAreNumber = ["postId", "userId", "offset", "limit"];
 
-  if (!req.query.postId) {
+  if (!req.query.postId && !req.query.user_id) {
     const errors: ErrorType[] = validateParams(req.query, requiredParams);
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
@@ -120,10 +177,11 @@ export const getCommentsByPostId = async (req: Request, res: Response) => {
   let { offset = 0, limit = 5 } = req.query;
 
   const postId = Number(req.query.postId);
+  const userId = Number(req.query.userId);
   offset = Number(offset);
   limit = Number(limit);
 
-  if (isNaN(postId) || isNaN(offset) || isNaN(limit)) {
+  if (isNaN(postId) || isNaN(userId) || isNaN(offset) || isNaN(limit)) {
     const errors: ErrorType[] = validateParamsAsNumber(
       req.query,
       requiredParamsAreNumber
@@ -139,15 +197,24 @@ export const getCommentsByPostId = async (req: Request, res: Response) => {
   try {
     const response: any[] = await getCommentsByPostIdModel(
       postId,
+      userId,
       limit,
       offset
     );
+
     const comments: GetCommentType[] = response[0];
 
+    console.log(comments);
+
+    let pagination: Pagination | null = null;
     let nextCommentId: number | null = null;
 
     if (comments.length > limit) {
       nextCommentId = comments[comments.length - 1].comment_id;
+      pagination = {
+        hasNextPage: true,
+        nextId: comments[comments.length - 1].comment_id,
+      };
       comments.pop();
     }
 
@@ -156,12 +223,11 @@ export const getCommentsByPostId = async (req: Request, res: Response) => {
       code: 200,
       message: "get comments successful",
       data: comments,
-      pagination: null,
+      pagination: pagination,
     };
 
     return res.status(200).json(successObject);
   } catch (error) {
-    console.log("ERROR");
     return res.status(500).json({
       error: {
         error: "500",
