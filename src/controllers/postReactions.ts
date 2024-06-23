@@ -99,12 +99,12 @@ export const getPostReaction = async (req: Request, res: Response) => {
 
   try {
     const response: any[] = await getPostReactionModel(userId, postId);
-    console.log(response[0]);
-    const successObject: SuccessResponseType<GetPostReactionType> = {
+    const successObject: SuccessResponseType<GetPostReactionType | null> = {
       status: "success",
       code: 200,
       message: "Get post reactions by user id successful",
-      data: response[0][0] as GetPostReactionType,
+      data:
+        response[0].length > 0 ? (response[0][0] as GetPostReactionType) : null,
       pagination: null,
     };
     return res.status(200).json(successObject);

@@ -138,14 +138,14 @@ export const getPostsModel = async (
           ), JSON_ARRAY()
       ) AS media,
       JSON_OBJECT(
-          'like', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 1), 0),
-          'love', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 2), 0),
-          'care', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 3), 0),
-          'haha', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 4), 0),
-          'wow', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 5), 0),
-          'sad', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 6), 0),
-          'angry', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 7), 0),
-          'total', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id), 0)
+          'like', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 1 AND pr.is_deleted = 0), 0),
+          'love', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 2 AND pr.is_deleted = 0), 0),
+          'care', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 3 AND pr.is_deleted = 0), 0),
+          'haha', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 4 AND pr.is_deleted = 0), 0),
+          'wow', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 5 AND pr.is_deleted = 0), 0),
+          'sad', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 6 AND pr.is_deleted = 0), 0),
+          'angry', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 7 AND pr.is_deleted = 0), 0),
+          'total', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.is_deleted = 0), 0)
       ) AS reactions,
       COALESCE((SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id), 0) AS total_comments,
       COALESCE((SELECT COUNT(*) FROM post_shares ps WHERE ps.post_id = p.post_id), 0) AS total_shares
@@ -156,7 +156,7 @@ export const getPostsModel = async (
     ORDER BY p.created_at DESC
     LIMIT ?;`;
 
-    return await connection.query(sqlQuery, [2, offset, userId, limit + 1]);
+    return await connection.query(sqlQuery, [2, offset, userId, 1]);
   } catch (error) {
     throw error;
   } finally {
