@@ -22,3 +22,11 @@ export type DeleteCommentType = {
   comment_id: number;
   user_id: number;
 };
+
+export type UpdateCommentType = {
+  commentId: number;
+  userId: number;
+  content: string;
+  media_type_id: number | null;
+  media_url: string | null;
+};

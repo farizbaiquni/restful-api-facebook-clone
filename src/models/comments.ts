@@ -128,3 +128,61 @@ export const deleteCommentModel = async (commentId: number, userId: number) => {
     if (connection) connection.release();
   }
 };
+
+export const updateCommentModel = async (
+  comment_id: number,
+  user_id: number,
+  content: string,
+  media_type_id: number | null,
+  media_url: string | null
+) => {
+  let connection;
+  try {
+    connection = await getConnection();
+
+    // Begin transaction
+    await connection.beginTransaction();
+
+    // Update comment content
+    const queryUpdateComment = `
+      UPDATE comments
+      SET content = ?, updated_at = NOW()
+      WHERE comment_id = ? AND user_id = ? AND is_deleted = 0`;
+
+    const [resultUpdateComment]: any = await connection.execute(
+      queryUpdateComment,
+      [content, comment_id, user_id]
+    );
+
+    let affectedRows = resultUpdateComment.affectedRows;
+
+    if (affectedRows >= 1) {
+      // Update comment media if media_type_id and media_url are provided
+      if (media_type_id !== null && media_url !== null) {
+        const queryUpdateCommentMedia = `
+        UPDATE comment_media
+        SET media_type_id = ?, media_url = ?
+        WHERE comment_id = ?`;
+
+        const [resultUpdateCommentMedia]: any = await connection.execute(
+          queryUpdateCommentMedia,
+          [media_type_id, media_url, comment_id]
+        );
+
+        affectedRows += resultUpdateCommentMedia.affectedRows;
+      }
+    }
+
+    // Commit transaction
+    await connection.commit();
+    return { success: true, affectedRows: affectedRows };
+  } catch (error) {
+    // Rollback transaction in case of error
+    if (connection) {
+      await connection.rollback();
+    }
+    throw error;
+  } finally {
+    if (connection) connection.release();
+  }
+};

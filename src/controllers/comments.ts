@@ -3,11 +3,13 @@ import {
   AddCommentType,
   DeleteCommentType,
   GetCommentType,
+  UpdateCommentType,
 } from "../types/CommentType";
 import {
   addCommentModel,
   deleteCommentModel,
   getCommentsByPostIdModel,
+  updateCommentModel,
 } from "../models/comments";
 import {
   DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER,
@@ -229,6 +231,106 @@ export const deleteComment = async (req: Request, res: Response) => {
       data: dataObject,
       pagination: null,
     };
+    return res.status(200).json(successObject);
+  } catch (error) {
+    return res.status(500).json({ error: error });
+  }
+};
+
+// Function to update comment
+export const updateComment = async (req: Request, res: Response) => {
+  const requiredParams = ["comment_id", "user_id"];
+
+  if (!req.body.comment_id || !req.body.user_id) {
+    const errors: ErrorType[] = validateParams(req.query, requiredParams);
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
+  let {
+    comment_id,
+    user_id,
+    content = "",
+    media_type_id = null,
+    media_url = null,
+  } = req.body;
+
+  comment_id = Number(comment_id);
+  user_id = Number(user_id);
+
+  if ((media_type_id === null || media_url === null) && content.length <= 0) {
+    const errors: ErrorType[] = [
+      {
+        field: "content, media_type_id, media_url",
+        type: "validate",
+        message: "There is no content or media attached",
+      },
+    ];
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.RESOURCE_NOT_FOUND,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
+  if (isNaN(comment_id) || isNaN(user_id)) {
+    const errors: ErrorType[] = validateParamsAsNumber(
+      req.query,
+      requiredParams
+    );
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
+
+  try {
+    const response = await updateCommentModel(
+      comment_id,
+      user_id,
+      content,
+      media_type_id,
+      media_url
+    );
+
+    if (response.affectedRows === 0) {
+      const errors: ErrorType[] = [
+        {
+          type: "not found",
+          message: "resource not found",
+        },
+      ];
+      const errorObject: ErrorResponseType = {
+        status: ErrorStatusEnum.RESOURCE_NOT_FOUND,
+        code: 404,
+        errors: errors,
+      };
+      return res.status(404).json(errorObject);
+    }
+
+    const dataObject: UpdateCommentType = {
+      commentId: comment_id,
+      userId: user_id,
+      content: content,
+      media_type_id: media_type_id,
+      media_url: media_url,
+    };
+
+    const successObject: SuccessResponseType<UpdateCommentType> = {
+      status: "success",
+      code: 200,
+      message: "Add post successful",
+      data: dataObject,
+      pagination: null,
+    };
+
     return res.status(200).json(successObject);
   } catch (error) {
     return res.status(500).json({ error: error });
