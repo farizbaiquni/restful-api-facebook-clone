@@ -5,8 +5,8 @@ import { CommentMediaTableType } from "../types/MediaType";
 
 export const addCommentModel = async (
   comment: AddCommentType,
-  media_type_id: number | null,
-  media_url: string | null
+  mediaTypeId: number | null,
+  mediaUrl: string | null
 ) => {
   const sqlAddCommentTable = "INSERT INTO comments SET ?";
   const sqlAddCommentMediaTable = "INSERT INTO comment_media SET ?";
@@ -15,41 +15,83 @@ export const addCommentModel = async (
         comments.comment_id,
         comments.post_id,
         comments.parent_comment_id,
-        comments.content,
         comments.user_id,
+        comments.content,
         comments.created_at,
         comments.updated_at,
         comment_media.media_type_id,
         comment_media.media_url,
+        users.first_name,
+        users.last_name,
+        users.profile_picture,
         (
           SELECT COUNT(*)
           FROM comments AS replies
           WHERE replies.parent_comment_id = comments.comment_id
-        ) AS total_replies
-      FROM comments
-      LEFT JOIN comment_media ON comments.comment_id = comment_media.comment_id
-      WHERE comments.comment_id = ?
-      LIMIT 1
-    `;
+            AND replies.is_deleted = 0
+        ) AS total_replies,
+        (
+          SELECT COUNT(*)
+          FROM comment_reactions
+          WHERE comment_reactions.comment_id = comments.comment_id
+            AND comment_reactions.reaction_id = (SELECT reaction_id FROM reaction_type WHERE reaction_name = 'like')
+        ) AS total_like,
+        (
+          SELECT COUNT(*)
+          FROM comment_reactions
+          WHERE comment_reactions.comment_id = comments.comment_id
+            AND comment_reactions.reaction_id = (SELECT reaction_id FROM reaction_type WHERE reaction_name = 'love')
+        ) AS total_love,
+        (
+          SELECT COUNT(*)
+          FROM comment_reactions
+          WHERE comment_reactions.comment_id = comments.comment_id
+            AND comment_reactions.reaction_id = (SELECT reaction_id FROM reaction_type WHERE reaction_name = 'haha')
+        ) AS total_haha,
+        (
+          SELECT COUNT(*)
+          FROM comment_reactions
+          WHERE comment_reactions.comment_id = comments.comment_id
+            AND comment_reactions.reaction_id = (SELECT reaction_id FROM reaction_type WHERE reaction_name = 'wow')
+        ) AS total_wow,
+        (
+          SELECT COUNT(*)
+          FROM comment_reactions
+          WHERE comment_reactions.comment_id = comments.comment_id
+            AND comment_reactions.reaction_id = (SELECT reaction_id FROM reaction_type WHERE reaction_name = 'sad')
+        ) AS total_sad,
+        (
+          SELECT COUNT(*)
+          FROM comment_reactions
+          WHERE comment_reactions.comment_id = comments.comment_id
+            AND comment_reactions.reaction_id = (SELECT reaction_id FROM reaction_type WHERE reaction_name = 'angry')
+        ) AS total_angry
+        FROM comments
+        LEFT JOIN comment_media ON comments.comment_id = comment_media.comment_id
+        LEFT JOIN users ON comments.user_id = users.user_id
+        WHERE comments.comment_id = ?
+        LIMIT 1
+      `;
   let connection;
 
   try {
     connection = await getConnection();
 
     await connection.beginTransaction();
-    const [result]: any = await connection.query(sqlAddCommentTable, comment);
-    const comment_id: number = Number(result.insertId);
 
-    if (media_type_id !== null && media_url !== null) {
+    const [result]: any = await connection.query(sqlAddCommentTable, comment);
+    const commentId: number = Number(result.insertId);
+
+    if (mediaTypeId !== null && mediaUrl !== null) {
       const commentMediaObj: CommentMediaTableType = {
-        comment_id: comment_id,
-        media_type_id: media_type_id,
-        media_url: media_url,
+        comment_id: commentId,
+        media_type_id: mediaTypeId,
+        media_url: mediaUrl,
       };
       await connection.query(sqlAddCommentMediaTable, commentMediaObj);
     }
 
-    const response = await connection.execute(sqlGetCommentById, [comment_id]);
+    const response = await connection.execute(sqlGetCommentById, [commentId]);
 
     await connection.commit();
 
@@ -129,7 +171,7 @@ export const getCommentsByPostIdModel = async (
     FROM comments
     LEFT JOIN comment_media ON comments.comment_id = comment_media.comment_id
     LEFT JOIN users ON comments.user_id = users.user_id
-    WHERE comments.post_id = ? AND comments.user_id != ? AND comments.is_deleted = 0
+    WHERE comments.post_id = ? AND comments.is_deleted = 0
     ORDER BY comments.updated_at DESC
     LIMIT ?
     OFFSET ?`;
@@ -138,7 +180,6 @@ export const getCommentsByPostIdModel = async (
     connection = await getConnection();
     return await connection.query<RowDataPacket[]>(sqlQueryNonAuthUser, [
       postId,
-      userId,
       limit + 1,
       offset,
     ]);

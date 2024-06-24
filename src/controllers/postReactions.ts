@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import {
-  addPostReactionModel,
+  addOrUpdatePostReactionModel,
   deletePostReactionModel,
   getPostReactionModel,
   getTop3PostReactionsModel,
@@ -13,6 +13,7 @@ import {
   DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER,
   validateParams,
   validateParamsAsNumber,
+  ResultAffectedRows,
 } from "../types/Responses";
 import {
   GetPostReactionType,
@@ -114,7 +115,7 @@ export const getPostReaction = async (req: Request, res: Response) => {
 };
 
 // ====== Function to add post reaction ======
-export const addPostReaction = async (req: Request, res: Response) => {
+export const addOrUpdatePostReaction = async (req: Request, res: Response) => {
   const requiredParams = ["user_id", "post_id", "reaction_id"];
 
   if (!req.body.user_id || !req.body.post_id || !req.body.reaction_id) {
@@ -130,7 +131,27 @@ export const addPostReaction = async (req: Request, res: Response) => {
   const { user_id, post_id, reaction_id } = req.body;
 
   try {
-    const response = await addPostReactionModel(user_id, post_id, reaction_id);
+    const response: ResultAffectedRows = await addOrUpdatePostReactionModel(
+      user_id,
+      post_id,
+      reaction_id
+    );
+
+    if (response.affectedRows === 0) {
+      const errors: ErrorType[] = [
+        {
+          type: "not found",
+          message: "resource not found",
+        },
+      ];
+      const errorObject: ErrorResponseType = {
+        status: ErrorStatusEnum.RESOURCE_NOT_FOUND,
+        code: 404,
+        errors: errors,
+      };
+      return res.status(404).json(errorObject);
+    }
+
     const successObject: SuccessResponseType<AddPostReactionType> = {
       status: "success",
       code: 200,
@@ -165,9 +186,12 @@ export const deletePostReaction = async (req: Request, res: Response) => {
   const { user_id, post_id } = req.body;
 
   try {
-    const response: any[] = await deletePostReactionModel(user_id, post_id);
+    const response: ResultAffectedRows = await deletePostReactionModel(
+      user_id,
+      post_id
+    );
 
-    if (response[0].affectedRows === 0) {
+    if (response.affectedRows === 0) {
       const errors: ErrorType[] = [
         {
           type: "not found",

@@ -12,6 +12,11 @@ export type SuccessResponseType<T> = {
   pagination: Pagination | null;
 };
 
+export type ResultAffectedRows = {
+  isSuccess: boolean;
+  affectedRows: number;
+};
+
 export function createSuccessResponse<T>(
   code: number,
   message: string,
