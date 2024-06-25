@@ -53,14 +53,14 @@ export const addOrUpdatePostReactionModel = async (
   postId: number,
   reactionId: number
 ) => {
-  const queryUpdatePostReaction = `
+  const sqlUpdatePostReaction = `
     INSERT INTO 
       post_reactions (user_id, post_id, reaction_id) 
     VALUES (?, ?, ?) 
     ON DUPLICATE KEY UPDATE reaction_id = VALUES(reaction_id), is_deleted = 0, deleted_at = NULL;
   `;
 
-  const queryPreviousReaction = `
+  const sqlPreviousReaction = `
     SELECT reaction_id
     FROM post_reactions
     WHERE user_id = ? AND post_id = ? AND is_deleted = 0
@@ -74,7 +74,7 @@ export const addOrUpdatePostReactionModel = async (
 
     // Mengunci baris yang dipilih dengan FOR UPDATE
     const [previousReactionRows]: any = await connection.execute(
-      queryPreviousReaction,
+      sqlPreviousReaction,
       [userId, postId]
     );
 
@@ -83,7 +83,7 @@ export const addOrUpdatePostReactionModel = async (
         ? previousReactionRows[0].reaction_id
         : null;
 
-    const queryUpdateTotalReactionPost = `
+    const sqlUpdateTotalReactionPost = `
       UPDATE posts
       SET 
         total_likes = CASE 
@@ -149,14 +149,14 @@ export const addOrUpdatePostReactionModel = async (
       WHERE post_id = ?;`;
 
     const [resultUpdatePostReaction]: any = await connection.execute(
-      queryUpdatePostReaction,
+      sqlUpdatePostReaction,
       [userId, postId, reactionId]
     );
 
     let affectedRows = resultUpdatePostReaction.affectedRows;
 
     if (affectedRows >= 1) {
-      await connection.execute(queryUpdateTotalReactionPost, [postId]);
+      await connection.execute(sqlUpdateTotalReactionPost, [postId]);
     }
 
     await connection.commit();
@@ -179,12 +179,12 @@ export const deletePostReactionModel = async (
   userId: number,
   postId: number
 ) => {
-  const queryUpdatePostReaction = `
+  const sqlUpdatePostReaction = `
     UPDATE post_reactions 
     SET is_deleted = 1, deleted_at = NOW() 
     WHERE user_id = ? AND post_id = ? AND is_deleted = 0;`;
 
-  const queryPreviousReaction = `
+  const sqlPreviousReaction = `
     SELECT reaction_id
     FROM post_reactions
     WHERE user_id = ? AND post_id = ? AND is_deleted = 0
@@ -198,7 +198,7 @@ export const deletePostReactionModel = async (
     await connection.beginTransaction();
 
     const [previousReactionRows]: any = await connection.execute(
-      queryPreviousReaction,
+      sqlPreviousReaction,
       [userId, postId]
     );
     const previousReactionId =
@@ -206,7 +206,7 @@ export const deletePostReactionModel = async (
         ? previousReactionRows[0].reaction_id
         : null;
 
-    const queryUpdateTotalReactionPost = `
+    const sqlUpdateTotalReactionPost = `
       UPDATE posts
       SET 
         total_likes = CASE 
@@ -244,14 +244,14 @@ export const deletePostReactionModel = async (
       WHERE post_id = ?;`;
 
     const [resultUpdatePostReaction]: any = await connection.execute(
-      queryUpdatePostReaction,
+      sqlUpdatePostReaction,
       [userId, postId]
     );
 
     let affectedRows = resultUpdatePostReaction.affectedRows;
 
     if (affectedRows >= 1) {
-      await connection.execute(queryUpdateTotalReactionPost, [postId]);
+      await connection.execute(sqlUpdateTotalReactionPost, [postId]);
     }
 
     await connection.commit();

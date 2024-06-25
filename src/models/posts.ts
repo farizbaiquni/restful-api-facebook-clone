@@ -18,50 +18,51 @@ export const addPostModel = async (
     const sqlAddAudienceIncludeTable = `INSERT INTO AudienceInclude SET ?`;
     const sqlAddAudienceExcludeTable = `INSERT INTO AudienceExclude SET ?`;
 
-    const sqlGetPostByPostId = `SELECT 
-      p.user_id AS user_id,
-      p.post_id AS post_id, 
-      p.content AS content, 
-      p.emoji AS emoji, 
-      p.activity_icon_url AS activity_icon_url, 
-      p.gif_url AS gif_url, 
-      p.latitude AS latitude, 
-      p.longitude AS longitude, 
-      p.location_name AS location_name, 
-      p.audience_type_id AS audience_type_id, 
-      p.created_at AS created_at, 
-      p.updated_at AS updated_at,  
-      u.first_name AS first_name,
-      u.last_name AS last_name,
-      u.profile_picture AS profile_picture,
-      COALESCE(
-          (
-              SELECT JSON_ARRAYAGG(JSON_OBJECT(
-                  'media_type_id', m.media_type_id, 
-                  'media_url', m.media_url
-              )) 
-              FROM media m 
-              WHERE m.post_id = p.post_id
-          ), JSON_ARRAY()
-      ) AS media,
-      JSON_OBJECT(
-          'like', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 1), 0),
-          'love', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 2), 0),
-          'care', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 3), 0),
-          'haha', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 4), 0),
-          'wow', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 5), 0),
-          'sad', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 6), 0),
-          'angry', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 7), 0),
-          'total', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id), 0)
-      ) AS reactions,
-      COALESCE((SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id), 0) AS total_comments,
-      COALESCE((SELECT COUNT(*) FROM post_shares ps WHERE ps.post_id = p.post_id), 0) AS total_shares
-    FROM posts p 
-    JOIN users u ON p.user_id = u.user_id 
-    WHERE p.post_id = ? AND p.user_id = ?
-    GROUP BY p.post_id, p.user_id, p.content, p.emoji, p.activity_icon_url, p.gif_url, p.latitude, p.longitude, p.location_name, p.audience_type_id, p.created_at, p.updated_at, u.first_name, u.last_name, u.profile_picture 
-    ORDER BY p.created_at DESC
-    LIMIT 1;`;
+    const sqlGetPostByPostId = `
+      SELECT 
+        p.user_id AS user_id,
+        p.post_id AS post_id, 
+        p.content AS content, 
+        p.emoji AS emoji, 
+        p.activity_icon_url AS activity_icon_url, 
+        p.gif_url AS gif_url, 
+        p.latitude AS latitude, 
+        p.longitude AS longitude, 
+        p.location_name AS location_name, 
+        p.audience_type_id AS audience_type_id, 
+        p.created_at AS created_at, 
+        p.updated_at AS updated_at,  
+        u.first_name AS first_name,
+        u.last_name AS last_name,
+        u.profile_picture AS profile_picture,
+        COALESCE(
+            (
+                SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                    'media_type_id', m.media_type_id, 
+                    'media_url', m.media_url
+                )) 
+                FROM media m 
+                WHERE m.post_id = p.post_id
+            ), JSON_ARRAY()
+        ) AS media,
+        JSON_OBJECT(
+            'total_likes', p.total_likes,
+            'total_loves', p.total_loves,
+            'total_cares', p.total_cares,
+            'total_haha', p.total_haha,
+            'total_wows', p.total_wows,
+            'total_sads', p.total_sads,
+            'total_angries', p.total_angries,
+            'total_reactions', p.total_reactions
+        ) AS reactions,
+        p.total_comments,
+        p.total_shares
+      FROM posts p 
+      JOIN users u ON p.user_id = u.user_id 
+      WHERE p.post_id = ? AND p.user_id = ? AND p.is_deleted = 0 
+      GROUP BY p.post_id, p.user_id, p.content, p.emoji, p.activity_icon_url, p.gif_url, p.latitude, p.longitude, p.location_name, p.audience_type_id, p.created_at, p.updated_at, u.first_name, u.last_name, u.profile_picture 
+      ORDER BY p.created_at DESC
+      LIMIT 1;`;
 
     await connection.beginTransaction();
 
@@ -138,17 +139,17 @@ export const getPostsModel = async (
           ), JSON_ARRAY()
       ) AS media,
       JSON_OBJECT(
-          'like', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 1 AND pr.is_deleted = 0), 0),
-          'love', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 2 AND pr.is_deleted = 0), 0),
-          'care', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 3 AND pr.is_deleted = 0), 0),
-          'haha', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 4 AND pr.is_deleted = 0), 0),
-          'wow', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 5 AND pr.is_deleted = 0), 0),
-          'sad', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 6 AND pr.is_deleted = 0), 0),
-          'angry', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.reaction_id = 7 AND pr.is_deleted = 0), 0),
-          'total', COALESCE((SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.is_deleted = 0), 0)
+          'total_likes', p.total_likes,
+          'total_loves', p.total_loves,
+          'total_cares', p.total_cares,
+          'total_haha', p.total_haha,
+          'total_wows', p.total_wows,
+          'total_sads', p.total_sads,
+          'total_angries', p.total_angries,
+          'total_reactions', p.total_reactions
       ) AS reactions,
-      COALESCE((SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id AND c.is_deleted = 0), 0) AS total_comments,
-      COALESCE((SELECT COUNT(*) FROM post_shares ps WHERE ps.post_id = p.post_id), 0) AS total_shares
+      p.total_comments,
+      p.total_shares
     FROM posts p 
     JOIN users u ON p.user_id = u.user_id 
     WHERE p.audience_type_id = ? AND p.post_id > ? AND p.is_deleted = 0 AND p.user_id != ?
