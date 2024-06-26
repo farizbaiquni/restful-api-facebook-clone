@@ -14,7 +14,7 @@ import {
   validateParams,
   validateParamsAsNumber,
   ResultAffectedRows,
-} from "../types/Responses";
+} from "../types/ResponsesType";
 import {
   GetPostReactionType,
   GetTop3PostReactionsType,
@@ -26,7 +26,6 @@ import {
 export const getTop3PostReactions = async (req: Request, res: Response) => {
   const requiredParams = ["postId"];
 
-  // Validate postId is exist
   if (!req.query.postId) {
     const errors: ErrorType[] = validateParams(req.query, requiredParams);
     const errorObject: ErrorResponseType = {
@@ -39,7 +38,6 @@ export const getTop3PostReactions = async (req: Request, res: Response) => {
 
   const postId = parseInt(req.query.postId as string, 10);
 
-  // Validate postId is a number
   if (isNaN(postId)) {
     const errors: ErrorType[] = validateParamsAsNumber(
       req.query,
@@ -55,11 +53,12 @@ export const getTop3PostReactions = async (req: Request, res: Response) => {
 
   try {
     const response: any[] = await getTop3PostReactionsModel(postId);
+    console.log(response[0]);
     const successObject: SuccessResponseType<GetTop3PostReactionsType> = {
       status: "success",
       code: 200,
       message: "Get top 3 post reactions successful",
-      data: response[0] as GetTop3PostReactionsType,
+      data: response[0],
       pagination: null,
     };
     return res.status(200).json(successObject);

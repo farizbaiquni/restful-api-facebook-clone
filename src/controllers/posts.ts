@@ -22,7 +22,7 @@ import {
   SuccessResponseType,
   validateParams,
   validateParamsAsNumber,
-} from "../types/Responses";
+} from "../types/ResponsesType";
 
 export const addPost = async (req: Request, res: Response) => {
   const requiredParams = ["user_id", "audience_type_id"];
@@ -87,8 +87,7 @@ export const addPost = async (req: Request, res: Response) => {
 
 export const getPosts = async (req: Request, res: Response) => {
   const requiredParams = ["userId"];
-  const requiredParamsAreNumber = ["offset", "userId"];
-  const limit: number = 5;
+  const requiredParamsAreNumber = ["offset", "limit", "userId"];
 
   if (!req.query.userId) {
     const errors: ErrorType[] = validateParams(req.query, requiredParams);
@@ -100,11 +99,12 @@ export const getPosts = async (req: Request, res: Response) => {
     return res.status(400).json(errorObject);
   }
 
-  let { offset = 0 } = req.query;
+  let { offset = 0, limit = 5 } = req.query;
   offset = Number(offset);
+  limit = Number(limit);
   const userId = Number(req.query.userId);
 
-  if (isNaN(offset) || isNaN(userId)) {
+  if (isNaN(offset) || isNaN(limit) || isNaN(userId)) {
     const errors: ErrorType[] = validateParamsAsNumber(
       req.query,
       requiredParamsAreNumber

@@ -110,6 +110,7 @@ export const getPostsModel = async (
 ) => {
   let connection;
   try {
+    if (limit > 10) limit = 10;
     connection = await getConnection();
     const sqlQuery = `
     SELECT 

@@ -21,7 +21,7 @@ import {
   SuccessResponseType,
   validateParams,
   validateParamsAsNumber,
-} from "../types/Responses";
+} from "../types/ResponsesType";
 
 // Function to add comment to post
 export const addComment = async (req: Request, res: Response) => {

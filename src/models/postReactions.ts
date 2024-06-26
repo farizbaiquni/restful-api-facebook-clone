@@ -1,22 +1,73 @@
 import { getConnection } from "../configs/database";
 import { ReactionTypeEnum } from "../types/ReactionType";
-import { ResultAffectedRows } from "../types/Responses";
+import { ResultAffectedRows } from "../types/ResponsesType";
 
 export const getTop3PostReactionsModel = async (post_id: number) => {
   const sqlQuery = `
-    SELECT pr.reaction_id, pr.reaction_name, pr.total_count
+    WITH posts_filtered AS (
+        SELECT 
+            post_id, total_likes, total_loves, total_cares, 
+            total_haha, total_wows, total_sads, total_angries
+        FROM posts
+        WHERE post_id = ?
+    )
+    SELECT 
+        CASE
+            WHEN reaction_name = 'total_likes' THEN ${ReactionTypeEnum.LIKE}
+            WHEN reaction_name = 'total_loves' THEN ${ReactionTypeEnum.LOVE}
+            WHEN reaction_name = 'total_cares' THEN ${ReactionTypeEnum.CARE}
+            WHEN reaction_name = 'total_haha' THEN ${ReactionTypeEnum.HAHA}
+            WHEN reaction_name = 'total_wows' THEN ${ReactionTypeEnum.WOW}
+            WHEN reaction_name = 'total_sads' THEN ${ReactionTypeEnum.SAD}
+            WHEN reaction_name = 'total_angries' THEN ${ReactionTypeEnum.ANGRY}
+            ELSE NULL
+        END AS reaction_id,
+        reaction_name,
+        total_count
     FROM (
-      SELECT pr.post_reaction_id, pr.user_id, pr.post_id, pr.reaction_id, rt.reaction_name, 
-            COUNT(*) as total_count,
-            ROW_NUMBER() OVER (PARTITION BY pr.reaction_id ORDER BY COUNT(*) DESC) as rn
-      FROM post_reactions pr
-      JOIN reaction_type rt ON pr.reaction_id = rt.reaction_id
-      WHERE pr.post_id = ? AND pr.is_deleted = 0
-      GROUP BY pr.reaction_id, pr.post_reaction_id, rt.reaction_name, pr.user_id, pr.post_id
-    ) AS pr
-    WHERE pr.rn <= 3
-    ORDER BY pr.rn;
-  `;
+        SELECT 'total_likes' AS reaction_name, total_likes AS total_count
+        FROM posts_filtered
+        WHERE total_likes >= 1
+
+        UNION ALL
+
+        SELECT 'total_loves' AS reaction_name, total_loves AS total_count
+        FROM posts_filtered
+        WHERE total_loves >= 1
+
+        UNION ALL
+
+        SELECT 'total_cares' AS reaction_name, total_cares AS total_count
+        FROM posts_filtered
+        WHERE total_cares >= 1
+
+        UNION ALL
+
+        SELECT 'total_haha' AS reaction_name, total_haha AS total_count
+        FROM posts_filtered
+        WHERE total_haha >= 1
+
+        UNION ALL
+
+        SELECT 'total_wows' AS reaction_name, total_wows AS total_count
+        FROM posts_filtered
+        WHERE total_wows >= 1
+
+        UNION ALL
+
+        SELECT 'total_sads' AS reaction_name, total_sads AS total_count
+        FROM posts_filtered
+        WHERE total_sads >= 1
+
+        UNION ALL
+
+        SELECT 'total_angries' AS reaction_name, total_angries AS total_count
+        FROM posts_filtered
+        WHERE total_angries >= 1
+    ) AS all_reactions
+    ORDER BY total_count DESC
+    LIMIT 3;`;
+
   let connection;
   try {
     connection = await getConnection();

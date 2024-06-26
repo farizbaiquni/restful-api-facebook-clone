@@ -8,6 +8,7 @@ import { verifyTokenJWTRouter } from "./routes/verifyTokenJWT";
 import { postsRouter } from "./routes/posts";
 import { postReactionsRouter } from "./routes/postReactions";
 import { commmentsRouter } from "./routes/comments";
+import { routerAuths } from "./routes/auths";
 
 const app = express();
 app.use(cookieParser());
@@ -22,6 +23,9 @@ app.use(
 );
 
 app.use(bodyParser.json());
+
+// Auths
+app.use(routerAuths);
 
 // Users
 app.use(routerUsers);
