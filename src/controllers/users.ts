@@ -1,28 +1,60 @@
 import { Request, Response } from "express";
 import { getUserByIdModel } from "../models/users";
+import {
+  DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER,
+  ErrorResponseType,
+  ErrorStatusEnum,
+  ErrorType,
+  SuccessResponseType,
+} from "../types/ResponsesType";
 
-interface CustomRequest extends Request {
-  user_id?: string;
+interface ExtendedRequest extends Request {
+  userId?: string;
 }
 
-export const getUserById = async (req: CustomRequest, res: Response) => {
-  const id = req.user_id;
+export const getUserByToken = async (req: ExtendedRequest, res: Response) => {
+  const userId = req.userId;
 
-  if (!id) {
-    return res
-      .status(400)
-      .json({ error: 400, message: "Please provide user id" });
+  if (!userId) {
+    const httpResponseCode = 400;
+    const errors: ErrorType = {
+      field: "token",
+      type: "validation",
+      message: "Invalid token",
+    };
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: httpResponseCode,
+      errors: [errors],
+    };
+    return res.status(httpResponseCode).json(errorObject);
   }
+
   try {
-    const [results] = await getUserByIdModel(id);
-    if ((results as any).length === 0) {
-      return res.status(401).json({
-        error: { error: "401", message: "Invalid email or password" },
-      });
+    const response: any[] = await getUserByIdModel(userId);
+    if (response[0].length === 0) {
+      const httpResponseCode = 404;
+      const errors: ErrorType = {
+        type: "userNotFound",
+        message: "User not found",
+      };
+      const errorObject: ErrorResponseType = {
+        status: ErrorStatusEnum.RESOURCE_NOT_FOUND,
+        code: httpResponseCode,
+        errors: [errors],
+      };
+      return res.status(httpResponseCode).json(errorObject);
     }
-    res.status(200).json({ status: 200, results: results });
+    const httpResponseCode = 200;
+    const successObject: SuccessResponseType<any> = {
+      status: "success",
+      code: httpResponseCode,
+      message: "Login successful",
+      data: response[0][0],
+      pagination: null,
+    };
+    res.status(200).json(successObject);
   } catch (error) {
-    console.log("Error : ", error);
-    res.status(500).json({ error: 500, message: "Internal server error" });
+    res.status(500).json(DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER);
   }
 };

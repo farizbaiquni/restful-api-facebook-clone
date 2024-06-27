@@ -2,7 +2,6 @@ import express, { Request, Response } from "express";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 import { routerUsers } from "./routes/users";
-import { authenticate } from "./middlewares/authenticate";
 import { profileRouter } from "./routes/profiles";
 import { verifyTokenJWTRouter } from "./routes/verifyTokenJWT";
 import { postsRouter } from "./routes/posts";
@@ -39,10 +38,7 @@ app.use(postReactionsRouter);
 // Comments
 app.use(commmentsRouter);
 
-// Profiles
-app.use("/profile", authenticate, profileRouter);
-
-// Verify token JWT
+// Verify token JWT for login
 app.use(verifyTokenJWTRouter);
 
 app.listen(port, () => {

@@ -184,7 +184,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     const user: loginModelType = response[0];
-    const isPasswordValid = await bcrypt.compare(password, "check");
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       const httpResponseCode = 401;
       const errors: ErrorType = {
