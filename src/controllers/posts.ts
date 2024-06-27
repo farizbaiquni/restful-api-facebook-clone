@@ -52,6 +52,25 @@ export const addPost = async (req: Request, res: Response) => {
     audience_exclude = [],
   } = req.body;
 
+  if (
+    content.trim.length <= 0 &&
+    media.length <= 0 &&
+    (gif_url === null || gif_url === undefined)
+  ) {
+    const httpResponseCode = 400;
+    const errors: ErrorType = {
+      field: "content, media, gif_url",
+      type: "validation",
+      message: "content, media, gif_url must be filled",
+    };
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: httpResponseCode,
+      errors: [errors],
+    };
+    return res.status(httpResponseCode).json(errorObject);
+  }
+
   const post: AddPostType = {
     user_id: user_id,
     content: content,

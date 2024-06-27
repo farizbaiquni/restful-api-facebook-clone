@@ -53,7 +53,6 @@ export const getTop3PostReactions = async (req: Request, res: Response) => {
 
   try {
     const response: any[] = await getTop3PostReactionsModel(postId);
-    console.log(response[0]);
     const successObject: SuccessResponseType<GetTop3PostReactionsType> = {
       status: "success",
       code: 200,
@@ -116,6 +115,7 @@ export const getPostReaction = async (req: Request, res: Response) => {
 // ====== Function to add post reaction ======
 export const addOrUpdatePostReaction = async (req: Request, res: Response) => {
   const requiredParams = ["user_id", "post_id", "reaction_id"];
+  const requiredParamsAreNumber = ["user_id", "post_id", "reaction_id"];
 
   if (!req.body.user_id || !req.body.post_id || !req.body.reaction_id) {
     const errors: ErrorType[] = validateParams(req.body, requiredParams);
@@ -128,12 +128,28 @@ export const addOrUpdatePostReaction = async (req: Request, res: Response) => {
   }
 
   const { user_id, post_id, reaction_id } = req.body;
+  const userId = Number(user_id);
+  const postId = Number(post_id);
+  const reactionId = Number(reaction_id);
+
+  if (isNaN(userId) || isNaN(postId) || isNaN(reactionId)) {
+    const errors: ErrorType[] = validateParamsAsNumber(
+      req.query,
+      requiredParamsAreNumber
+    );
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
 
   try {
     const response: ResultAffectedRows = await addOrUpdatePostReactionModel(
-      user_id,
-      post_id,
-      reaction_id
+      userId,
+      postId,
+      reactionId
     );
 
     if (response.affectedRows === 0) {
@@ -171,6 +187,7 @@ export const addOrUpdatePostReaction = async (req: Request, res: Response) => {
 // ====== Function to delete a post reactions  ======
 export const deletePostReaction = async (req: Request, res: Response) => {
   const requiredParams = ["user_id", "post_id"];
+  const requiredParamsAreNumber = ["user_id", "post_id"];
 
   if (!req.body.user_id || !req.body.post_id) {
     const errors: ErrorType[] = validateParams(req.body, requiredParams);
@@ -183,6 +200,21 @@ export const deletePostReaction = async (req: Request, res: Response) => {
   }
 
   const { user_id, post_id } = req.body;
+  const userId = Number(user_id);
+  const postId = Number(post_id);
+
+  if (isNaN(userId) || isNaN(postId)) {
+    const errors: ErrorType[] = validateParamsAsNumber(
+      req.query,
+      requiredParamsAreNumber
+    );
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: 400,
+      errors: errors,
+    };
+    return res.status(400).json(errorObject);
+  }
 
   try {
     const response: ResultAffectedRows = await deletePostReactionModel(
