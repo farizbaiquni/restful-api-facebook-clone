@@ -7,7 +7,7 @@ import {
   ErrorType,
 } from "../types/ResponsesType";
 
-interface ExtendedRequest extends Request {
+export interface ExtendedRequestGetUserByToken extends Request {
   userId?: string;
 }
 
@@ -17,7 +17,7 @@ type PayloadType = {
 };
 
 export const authVerifyTokenJWT = (
-  req: ExtendedRequest,
+  req: ExtendedRequestGetUserByToken,
   res: Response,
   next: NextFunction
 ) => {

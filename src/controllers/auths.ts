@@ -4,7 +4,10 @@ import bcrypt from "bcrypt";
 import { JWT_SECRET_KEY } from "../configs/config";
 import { UserType, loginModelType } from "../types/UserType";
 import { loginModel, registerModel } from "../models/auths";
-import { validateDateOfBirthFormat } from "../utils/validations";
+import {
+  validateDateOfBirthFormat,
+  validateEmailFormat,
+} from "../utils/validations";
 import {
   DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER,
   ErrorResponseType,
@@ -55,6 +58,21 @@ export const register = async (req: Request, res: Response) => {
   } = req.body;
 
   let { gender_id } = req.body;
+
+  if (!validateEmailFormat(email)) {
+    const httpResponseCode = 400;
+    const error: ErrorType = {
+      field: "email",
+      type: "validation",
+      message: "Invalid email format",
+    };
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: httpResponseCode,
+      errors: [error],
+    };
+    return res.status(httpResponseCode).json(errorObject);
+  }
 
   if (!validateDateOfBirthFormat(birth_date)) {
     const httpResponseCode = 400;
@@ -216,7 +234,6 @@ export const login = async (req: Request, res: Response) => {
       data: { token: token, expiredIn: expiredIn },
       pagination: null,
     };
-
     return res.status(httpResponseCode).json(successObject);
   } catch (error) {
     res.status(500).json(DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER);

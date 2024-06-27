@@ -7,20 +7,35 @@ import {
   ErrorType,
   SuccessResponseType,
 } from "../types/ResponsesType";
+import { ExtendedRequestGetUserByToken } from "../middlewares/authVerifyTokenJWT";
 
-interface ExtendedRequest extends Request {
-  userId?: string;
-}
-
-export const getUserByToken = async (req: ExtendedRequest, res: Response) => {
-  const userId = req.userId;
-
-  if (!userId) {
+export const getUserByToken = async (
+  req: ExtendedRequestGetUserByToken,
+  res: Response
+) => {
+  if (!req.userId) {
     const httpResponseCode = 400;
     const errors: ErrorType = {
       field: "token",
       type: "validation",
       message: "Invalid token",
+    };
+    const errorObject: ErrorResponseType = {
+      status: ErrorStatusEnum.INVALID_PARAMETER,
+      code: httpResponseCode,
+      errors: [errors],
+    };
+    return res.status(httpResponseCode).json(errorObject);
+  }
+
+  const userId = Number(req.userId);
+
+  if (isNaN(userId)) {
+    const httpResponseCode = 400;
+    const errors: ErrorType = {
+      field: "userId",
+      type: "validation",
+      message: "userId must be a number",
     };
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,

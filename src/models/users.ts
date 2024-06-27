@@ -1,7 +1,7 @@
 import { getConnection } from "../configs/database";
 import { UserType } from "../types/UserType";
 
-export const getUserByIdModel = async (userId: string) => {
+export const getUserByIdModel = async (userId: number) => {
   let connection;
   try {
     connection = await getConnection();
