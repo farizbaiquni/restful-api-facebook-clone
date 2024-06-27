@@ -154,7 +154,6 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   const requiredParams = ["email", "password"];
-
   if (!JWT_SECRET_KEY) {
     const httpResponseCode = 500;
     const errors: ErrorType = {
@@ -201,7 +200,7 @@ export const login = async (req: Request, res: Response) => {
       return res.status(httpResponseCode).json(errorObject);
     }
 
-    const user: loginModelType = response[0];
+    const user: loginModelType = response[0][0];
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       const httpResponseCode = 401;
@@ -234,6 +233,7 @@ export const login = async (req: Request, res: Response) => {
       data: { token: token, expiredIn: expiredIn },
       pagination: null,
     };
+
     return res.status(httpResponseCode).json(successObject);
   } catch (error) {
     res.status(500).json(DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER);
