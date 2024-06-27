@@ -252,6 +252,7 @@ export const deletePostReactionModel = async (
       sqlPreviousReaction,
       [userId, postId]
     );
+
     const previousReactionId =
       previousReactionRows.length > 0
         ? previousReactionRows[0].reaction_id
@@ -289,7 +290,7 @@ export const deletePostReactionModel = async (
                           ELSE total_angries 
                         END,
         total_reactions = CASE 
-                          WHEN ${previousReactionId} IS NOT NULL THEN total_reactions + 1
+                          WHEN ${previousReactionId} IS NOT NULL THEN total_reactions - 1
                           ELSE total_reactions 
                         END
       WHERE post_id = ?;`;
