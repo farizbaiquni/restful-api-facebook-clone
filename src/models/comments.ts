@@ -97,7 +97,6 @@ export const addCommentModel = async (
 
     return response;
   } catch (error) {
-    console.log(error);
     if (connection) await connection.rollback();
     throw error;
   } finally {
@@ -172,7 +171,7 @@ export const getCommentsByPostIdModel = async (
     LEFT JOIN comment_media ON comments.comment_id = comment_media.comment_id
     LEFT JOIN users ON comments.user_id = users.user_id
     WHERE comments.post_id = ? AND comments.is_deleted = 0
-    ORDER BY comments.updated_at DESC
+    ORDER BY comments.total_reactions DESC
     LIMIT ?
     OFFSET ?`;
   let connection;
@@ -342,18 +341,30 @@ export const getInitialCommentModel = async (
   }
 };
 
-export const deleteCommentModel = async (commentId: number, userId: number) => {
+export const deleteCommentModel = async (
+  postId: number,
+  commentId: number,
+  userId: number
+) => {
+  const querySoftDeleteComment = `
+    UPDATE comments
+    SET is_deleted = 1, deleted_at = NOW()
+    WHERE comment_id = ? AND user_id = ? AND is_deleted = 0`;
+  const queryDecreaseTotalCommentsPost = `UPDATE posts SET total_comments = total_comments - 1 WHERE post_id = ?`;
   let connection;
   try {
     connection = await getConnection();
-    const querySoftDeleteComment = `
-      UPDATE comments
-      SET is_deleted = 1, deleted_at = NOW()
-      WHERE comment_id = ? AND user_id = ? AND is_deleted = 0`;
-    return await connection.execute(querySoftDeleteComment, [
-      commentId,
-      userId,
-    ]);
+    connection.beginTransaction();
+    const [resultSoftDeleteComment]: any = await connection.execute(
+      querySoftDeleteComment,
+      [commentId, userId]
+    );
+    let affectedRows = resultSoftDeleteComment.affectedRows;
+    if (affectedRows >= 1) {
+      await connection.execute(queryDecreaseTotalCommentsPost, [postId]);
+    }
+    await connection.commit();
+    return { affectedRows: affectedRows };
   } catch (error) {
     throw error;
   } finally {

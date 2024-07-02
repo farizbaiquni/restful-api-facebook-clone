@@ -28,13 +28,14 @@ export const addComment = async (req: Request, res: Response) => {
   const requiredParams = ["user_id", "post_id"];
 
   if (!req.body.user_id || !req.body.post_id) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = validateParams(req.query, requiredParams);
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   const {
@@ -49,7 +50,8 @@ export const addComment = async (req: Request, res: Response) => {
   const userId = Number(user_id);
   const postId = Number(post_id);
 
-  if ((media_type_id === null || media_url === null) && content.length <= 0) {
+  if (content.length <= 0 && (media_type_id === null || media_url === null)) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = [
       {
         field: "content, media_type_id, media_url",
@@ -59,23 +61,24 @@ export const addComment = async (req: Request, res: Response) => {
     ];
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.RESOURCE_NOT_FOUND,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   if (isNaN(userId) || isNaN(postId)) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = validateParamsAsNumber(
       req.query,
       requiredParams
     );
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   const comment: AddCommentType = {
@@ -91,17 +94,17 @@ export const addComment = async (req: Request, res: Response) => {
       media_type_id,
       media_url
     );
+    const httpResponseCode = 201;
     const successObject: SuccessResponseType<GetCommentType> = {
       status: "success",
-      code: 200,
+      code: httpResponseCode,
       message: "Add post successful",
       data: response[0][0],
       pagination: null,
     };
-    return res.status(200).json(successObject);
+    return res.status(httpResponseCode).json(successObject);
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: error });
+    return res.status(500).json(DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER);
   }
 };
 
@@ -110,29 +113,31 @@ export const getInitialComment = async (req: Request, res: Response) => {
   const requiredParamsAreNumber = ["postId", "userId"];
 
   if (!req.query.postId && !req.query.user_id) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = validateParams(req.query, requiredParams);
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   const postId = Number(req.query.postId);
   const userId = Number(req.query.userId);
 
   if (isNaN(postId) || isNaN(userId)) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = validateParamsAsNumber(
       req.query,
       requiredParamsAreNumber
     );
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   try {
@@ -140,23 +145,18 @@ export const getInitialComment = async (req: Request, res: Response) => {
 
     const comments: GetCommentType[] = response[0];
 
+    const httpResponseCode = 200;
     const successObject: SuccessResponseType<GetCommentType[]> = {
       status: "success",
-      code: 200,
+      code: httpResponseCode,
       message: "get comments successful",
       data: comments,
       pagination: null,
     };
 
-    return res.status(200).json(successObject);
+    return res.status(httpResponseCode).json(successObject);
   } catch (error) {
-    return res.status(500).json({
-      error: {
-        error: "500",
-        message: "Internal server error",
-        detail: error,
-      },
-    });
+    return res.status(500).json(DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER);
   }
 };
 
@@ -166,13 +166,14 @@ export const getCommentsByPostId = async (req: Request, res: Response) => {
   const requiredParamsAreNumber = ["postId", "userId", "offset", "limit"];
 
   if (!req.query.postId && !req.query.user_id) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = validateParams(req.query, requiredParams);
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   let { offset = 0, limit = 5 } = req.query;
@@ -183,16 +184,17 @@ export const getCommentsByPostId = async (req: Request, res: Response) => {
   limit = Number(limit);
 
   if (isNaN(postId) || isNaN(userId) || isNaN(offset) || isNaN(limit)) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = validateParamsAsNumber(
       req.query,
       requiredParamsAreNumber
     );
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   try {
@@ -204,8 +206,6 @@ export const getCommentsByPostId = async (req: Request, res: Response) => {
     );
 
     const comments: GetCommentType[] = response[0];
-
-    console.log(comments);
 
     let pagination: Pagination | null = null;
     let nextCommentId: number | null = null;
@@ -219,60 +219,59 @@ export const getCommentsByPostId = async (req: Request, res: Response) => {
       comments.pop();
     }
 
+    const httpResponseCode = 200;
     const successObject: SuccessResponseType<GetCommentType[]> = {
       status: "success",
-      code: 200,
+      code: httpResponseCode,
       message: "get comments successful",
       data: comments,
       pagination: pagination,
     };
 
-    return res.status(200).json(successObject);
+    return res.status(httpResponseCode).json(successObject);
   } catch (error) {
-    return res.status(500).json({
-      error: {
-        error: "500",
-        message: "Internal server error",
-        detail: error,
-      },
-    });
+    return res.status(500).json(DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER);
   }
 };
 
 // Function to delete comment
 export const deleteComment = async (req: Request, res: Response) => {
-  const requiredParams = ["commentId", "userId"];
+  const requiredParams = ["postId", "commentId", "userId"];
 
-  if (!req.query.commentId || !req.query.userId) {
+  if ((!req.query.postId && !req.query.commentId) || !req.query.userId) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = validateParams(req.query, requiredParams);
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
+  const postId = Number(req.query.postId);
   const commentId = Number(req.query.commentId);
   const userId = Number(req.query.userId);
 
-  if (isNaN(commentId) || isNaN(userId)) {
+  if (isNaN(postId) || isNaN(commentId) || isNaN(userId)) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = validateParamsAsNumber(
       req.query,
       requiredParams
     );
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   try {
-    const response: any[] = await deleteCommentModel(commentId, userId);
+    const response = await deleteCommentModel(postId, commentId, userId);
 
-    if (response[0].affectedRows === 0) {
+    if (response.affectedRows === 0) {
+      const httpResponseCode = 404;
       const errors: ErrorType[] = [
         {
           type: "not found",
@@ -281,26 +280,27 @@ export const deleteComment = async (req: Request, res: Response) => {
       ];
       const errorObject: ErrorResponseType = {
         status: ErrorStatusEnum.RESOURCE_NOT_FOUND,
-        code: 404,
+        code: httpResponseCode,
         errors: errors,
       };
-      return res.status(404).json(errorObject);
+      return res.status(httpResponseCode).json(errorObject);
     }
 
+    const httpResponseCode = 200;
     const dataObject: DeleteCommentType = {
       comment_id: commentId,
       user_id: userId,
     };
     const successObject: SuccessResponseType<DeleteCommentType> = {
       status: "success",
-      code: 200,
+      code: httpResponseCode,
       message: "Delete a comment successful",
       data: dataObject,
       pagination: null,
     };
-    return res.status(200).json(successObject);
+    return res.status(httpResponseCode).json(successObject);
   } catch (error) {
-    return res.status(500).json({ error: error });
+    return res.status(500).json(DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER);
   }
 };
 
@@ -309,13 +309,14 @@ export const updateComment = async (req: Request, res: Response) => {
   const requiredParams = ["comment_id", "user_id"];
 
   if (!req.body.comment_id || !req.body.user_id) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = validateParams(req.query, requiredParams);
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   let {
@@ -330,6 +331,7 @@ export const updateComment = async (req: Request, res: Response) => {
   user_id = Number(user_id);
 
   if ((media_type_id === null || media_url === null) && content.length <= 0) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = [
       {
         field: "content, media_type_id, media_url",
@@ -339,23 +341,24 @@ export const updateComment = async (req: Request, res: Response) => {
     ];
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.RESOURCE_NOT_FOUND,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   if (isNaN(comment_id) || isNaN(user_id)) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = validateParamsAsNumber(
       req.query,
       requiredParams
     );
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   try {
@@ -368,6 +371,7 @@ export const updateComment = async (req: Request, res: Response) => {
     );
 
     if (response.affectedRows === 0) {
+      const httpResponseCode = 404;
       const errors: ErrorType[] = [
         {
           type: "not found",
@@ -376,12 +380,13 @@ export const updateComment = async (req: Request, res: Response) => {
       ];
       const errorObject: ErrorResponseType = {
         status: ErrorStatusEnum.RESOURCE_NOT_FOUND,
-        code: 404,
+        code: httpResponseCode,
         errors: errors,
       };
-      return res.status(404).json(errorObject);
+      return res.status(httpResponseCode).json(errorObject);
     }
 
+    const httpResponseCode = 200;
     const dataObject: UpdateCommentType = {
       commentId: comment_id,
       userId: user_id,
@@ -392,14 +397,14 @@ export const updateComment = async (req: Request, res: Response) => {
 
     const successObject: SuccessResponseType<UpdateCommentType> = {
       status: "success",
-      code: 200,
+      code: httpResponseCode,
       message: "Add post successful",
       data: dataObject,
       pagination: null,
     };
 
-    return res.status(200).json(successObject);
+    return res.status(httpResponseCode).json(successObject);
   } catch (error) {
-    return res.status(500).json({ error: error });
+    return res.status(500).json(DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER);
   }
 };

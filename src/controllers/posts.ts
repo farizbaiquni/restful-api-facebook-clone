@@ -28,13 +28,14 @@ export const addPost = async (req: Request, res: Response) => {
   const requiredParams = ["user_id", "audience_type_id"];
 
   if (!req.body.user_id || !req.body.audience_type_id) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = validateParams(req.query, requiredParams);
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   const {
@@ -55,7 +56,8 @@ export const addPost = async (req: Request, res: Response) => {
   if (
     content.trim.length <= 0 &&
     media.length <= 0 &&
-    (gif_url === null || gif_url === undefined)
+    (gif_url === null || gif_url === undefined) &&
+    content.trim.length <= 0
   ) {
     const httpResponseCode = 400;
     const errors: ErrorType = {
@@ -90,17 +92,17 @@ export const addPost = async (req: Request, res: Response) => {
       audience_include,
       audience_exclude
     );
-
+    const httpResponseCode = 201;
     const successObject: SuccessResponseType<GetPostType | null> = {
       status: "success",
-      code: 200,
+      code: httpResponseCode,
       message: "Add post successful",
       data: response[0][0],
       pagination: null,
     };
-    return res.status(200).json(successObject);
+    return res.status(httpResponseCode).json(successObject);
   } catch (error) {
-    return res.status(500).json({ error: error });
+    return res.status(500).json(DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER);
   }
 };
 
@@ -109,13 +111,14 @@ export const getPosts = async (req: Request, res: Response) => {
   const requiredParamsAreNumber = ["offset", "limit", "userId"];
 
   if (!req.query.userId) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = validateParams(req.query, requiredParams);
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   let { offset = 0, limit = 5 } = req.query;
@@ -124,16 +127,17 @@ export const getPosts = async (req: Request, res: Response) => {
   const userId = Number(req.query.userId);
 
   if (isNaN(offset) || isNaN(limit) || isNaN(userId)) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = validateParamsAsNumber(
       req.query,
       requiredParamsAreNumber
     );
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   try {
@@ -153,15 +157,16 @@ export const getPosts = async (req: Request, res: Response) => {
       nextId: nextId,
     };
 
+    const httpResponseCode = 200;
     const successObject: SuccessResponseType<GetPostType[]> = {
       status: "success",
-      code: 200,
+      code: httpResponseCode,
       message: "Get posts successful",
       data: response[0] as GetPostType[],
       pagination: nextId !== null ? pagination : null,
     };
 
-    return res.status(200).json(successObject);
+    return res.status(httpResponseCode).json(successObject);
   } catch (error) {
     return res.status(500).json(DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER);
   }
@@ -171,34 +176,37 @@ export const deletePost = async (req: Request, res: Response) => {
   const requiredParams = ["postId", "userId"];
 
   if (!req.query.postId || !req.query.userId) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = validateParams(req.query, requiredParams);
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   const postId = Number(req.query.postId);
   const userId = Number(req.query.userId);
 
   if (isNaN(postId) || isNaN(userId)) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = validateParamsAsNumber(
       req.query,
       requiredParams
     );
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   try {
     const response: any[] = await deletePostModel(postId, userId);
     if (response[0].affectedRows === 0) {
+      const httpResponseCode = 404;
       const errors: ErrorType[] = [
         {
           type: "not found",
@@ -207,25 +215,27 @@ export const deletePost = async (req: Request, res: Response) => {
       ];
       const errorObject: ErrorResponseType = {
         status: ErrorStatusEnum.RESOURCE_NOT_FOUND,
-        code: 404,
+        code: httpResponseCode,
         errors: errors,
       };
-      return res.status(404).json(errorObject);
+      return res.status(httpResponseCode).json(errorObject);
     }
+
+    const httpResponseCode = 200;
     const dataObject: DeletePostType = {
       post_id: postId,
       user_id: userId,
     };
     const successObject: SuccessResponseType<DeletePostType> = {
       status: "success",
-      code: 200,
+      code: httpResponseCode,
       message: "Delete post successful",
       data: dataObject,
       pagination: null,
     };
-    return res.status(200).json(successObject);
+    return res.status(httpResponseCode).json(successObject);
   } catch (error) {
-    return res.status(500).json({ error: error });
+    return res.status(500).json(DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER);
   }
 };
 
@@ -233,34 +243,37 @@ export const undoDeletePost = async (req: Request, res: Response) => {
   const requiredParams = ["postId", "userId"];
 
   if (!req.body.postId || !req.body.userId) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = validateParams(req.body, requiredParams);
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   const postId = Number(req.body.postId);
   const userId = Number(req.body.userId);
 
   if (isNaN(postId) || isNaN(userId)) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = validateParamsAsNumber(
       req.body,
       requiredParams
     );
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   try {
     const response: any[] = await undoDeletePostModel(postId, userId);
     if (response[0].affectedRows === 0) {
+      const httpResponseCode = 404;
       const errors: ErrorType[] = [
         {
           type: "not found",
@@ -269,25 +282,26 @@ export const undoDeletePost = async (req: Request, res: Response) => {
       ];
       const errorObject: ErrorResponseType = {
         status: ErrorStatusEnum.RESOURCE_NOT_FOUND,
-        code: 404,
+        code: httpResponseCode,
         errors: errors,
       };
-      return res.status(404).json(errorObject);
+      return res.status(httpResponseCode).json(errorObject);
     }
+    const httpResponseCode = 200;
     const dataObject: UndoDeletePostType = {
       post_id: postId,
       user_id: userId,
     };
     const successObject: SuccessResponseType<UndoDeletePostType> = {
       status: "success",
-      code: 200,
+      code: httpResponseCode,
       message: "Undo delete a post successful",
       data: dataObject,
       pagination: null,
     };
-    return res.status(200).json(successObject);
+    return res.status(httpResponseCode).json(successObject);
   } catch (error) {
-    return res.status(500).json({ error: error });
+    return res.status(500).json(DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER);
   }
 };
 
@@ -300,16 +314,18 @@ export const undoMultipleDeletePosts = async (req: Request, res: Response) => {
   }
 
   if (!req.body.postIdArr || !req.body.userId) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = validateParams(req.body, requiredParams);
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   if (!Array.isArray(req.body.postIdArr)) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = [
       {
         field: "postIdArr",
@@ -319,15 +335,16 @@ export const undoMultipleDeletePosts = async (req: Request, res: Response) => {
     ];
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   const postIdArrAny: any[] = req.body.postIdArr as any[];
 
   if (postIdArrAny.length === 0) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = [
       {
         field: "postIdArr",
@@ -337,13 +354,14 @@ export const undoMultipleDeletePosts = async (req: Request, res: Response) => {
     ];
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   if (!checkAllPostIdArrAreNumbers(postIdArrAny)) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = [
       {
         field: "postIdArr",
@@ -353,26 +371,27 @@ export const undoMultipleDeletePosts = async (req: Request, res: Response) => {
     ];
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   const postIdArr: number[] = postIdArrAny.map((data) => Number(data));
   const userId = Number(req.body.userId);
 
   if (isNaN(userId)) {
+    const httpResponseCode = 400;
     const errors: ErrorType[] = validateParamsAsNumber(
       req.body,
       requiredParamsAreNumber
     );
     const errorObject: ErrorResponseType = {
       status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: 400,
+      code: httpResponseCode,
       errors: errors,
     };
-    return res.status(400).json(errorObject);
+    return res.status(httpResponseCode).json(errorObject);
   }
 
   try {
@@ -382,6 +401,7 @@ export const undoMultipleDeletePosts = async (req: Request, res: Response) => {
     );
 
     if (response[0].affectedRows === 0) {
+      const httpResponseCode = 404;
       const errors: ErrorType[] = [
         {
           type: "not found",
@@ -390,25 +410,26 @@ export const undoMultipleDeletePosts = async (req: Request, res: Response) => {
       ];
       const errorObject: ErrorResponseType = {
         status: ErrorStatusEnum.RESOURCE_NOT_FOUND,
-        code: 404,
+        code: httpResponseCode,
         errors: errors,
       };
-      return res.status(404).json(errorObject);
+      return res.status(httpResponseCode).json(errorObject);
     }
 
+    const httpResponseCode = 200;
     const dataObject: UndoDeleteMultiplePostsType = {
       post_id_array: postIdArr,
       user_id: userId,
     };
     const successObject: SuccessResponseType<UndoDeleteMultiplePostsType> = {
       status: "success",
-      code: 200,
+      code: httpResponseCode,
       message: "Undo multiple delete posts successful",
       data: dataObject,
       pagination: null,
     };
-    return res.status(200).json(successObject);
+    return res.status(httpResponseCode).json(successObject);
   } catch (error) {
-    return res.status(500).json({ error: error });
+    return res.status(500).json(DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER);
   }
 };
