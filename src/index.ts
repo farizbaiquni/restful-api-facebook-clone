@@ -2,12 +2,12 @@ import express, { Request, Response } from "express";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 import { routerUsers } from "./routes/users";
-import { profileRouter } from "./routes/profiles";
 import { verifyTokenJWTRouter } from "./routes/verifyTokenJWT";
 import { postsRouter } from "./routes/posts";
 import { postReactionsRouter } from "./routes/postReactions";
 import { commmentsRouter } from "./routes/comments";
 import { routerAuths } from "./routes/auths";
+import { CommentReactionsRouter } from "./routes/commentReaction";
 
 const app = express();
 app.use(cookieParser());
@@ -37,6 +37,9 @@ app.use(postReactionsRouter);
 
 // Comments
 app.use(commmentsRouter);
+
+// Comment Reactions
+app.use(CommentReactionsRouter);
 
 // Verify token JWT for login
 app.use(verifyTokenJWTRouter);
