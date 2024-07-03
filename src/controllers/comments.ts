@@ -9,7 +9,6 @@ import {
   addCommentModel,
   deleteCommentModel,
   getCommentsByPostIdModel,
-  getInitialCommentModel,
   updateCommentModel,
 } from "../models/comments";
 import {
@@ -108,64 +107,12 @@ export const addComment = async (req: Request, res: Response) => {
   }
 };
 
-export const getInitialComment = async (req: Request, res: Response) => {
-  const requiredParams = ["postId", "userId"];
-  const requiredParamsAreNumber = ["postId", "userId"];
-
-  if (!req.query.postId && !req.query.user_id) {
-    const httpResponseCode = 400;
-    const errors: ErrorType[] = validateParams(req.query, requiredParams);
-    const errorObject: ErrorResponseType = {
-      status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: httpResponseCode,
-      errors: errors,
-    };
-    return res.status(httpResponseCode).json(errorObject);
-  }
-
-  const postId = Number(req.query.postId);
-  const userId = Number(req.query.userId);
-
-  if (isNaN(postId) || isNaN(userId)) {
-    const httpResponseCode = 400;
-    const errors: ErrorType[] = validateParamsAsNumber(
-      req.query,
-      requiredParamsAreNumber
-    );
-    const errorObject: ErrorResponseType = {
-      status: ErrorStatusEnum.INVALID_PARAMETER,
-      code: httpResponseCode,
-      errors: errors,
-    };
-    return res.status(httpResponseCode).json(errorObject);
-  }
-
-  try {
-    const response: any[] = await getInitialCommentModel(postId, userId);
-
-    const comments: GetCommentType[] = response[0];
-
-    const httpResponseCode = 200;
-    const successObject: SuccessResponseType<GetCommentType[]> = {
-      status: "success",
-      code: httpResponseCode,
-      message: "get comments successful",
-      data: comments,
-      pagination: null,
-    };
-
-    return res.status(httpResponseCode).json(successObject);
-  } catch (error) {
-    return res.status(500).json(DEFAULT_ERROR_RESPONSE_INTERNAL_SERVER);
-  }
-};
-
 // Function to get comments by post id
 export const getCommentsByPostId = async (req: Request, res: Response) => {
-  const requiredParams = ["postId", "userId"];
-  const requiredParamsAreNumber = ["postId", "userId", "offset", "limit"];
+  const requiredParams = ["postId"];
+  const requiredParamsAreNumber = ["postId", "offset", "limit"];
 
-  if (!req.query.postId && !req.query.user_id) {
+  if (!req.query.postId) {
     const httpResponseCode = 400;
     const errors: ErrorType[] = validateParams(req.query, requiredParams);
     const errorObject: ErrorResponseType = {
@@ -179,11 +126,10 @@ export const getCommentsByPostId = async (req: Request, res: Response) => {
   let { offset = 0, limit = 5 } = req.query;
 
   const postId = Number(req.query.postId);
-  const userId = Number(req.query.userId);
   offset = Number(offset);
   limit = Number(limit);
 
-  if (isNaN(postId) || isNaN(userId) || isNaN(offset) || isNaN(limit)) {
+  if (isNaN(postId) || isNaN(offset) || isNaN(limit)) {
     const httpResponseCode = 400;
     const errors: ErrorType[] = validateParamsAsNumber(
       req.query,
@@ -200,7 +146,6 @@ export const getCommentsByPostId = async (req: Request, res: Response) => {
   try {
     const response: any[] = await getCommentsByPostIdModel(
       postId,
-      userId,
       limit,
       offset
     );
