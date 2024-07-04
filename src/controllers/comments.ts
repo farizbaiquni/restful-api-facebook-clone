@@ -150,7 +150,7 @@ export const getCommentsByPostId = async (req: Request, res: Response) => {
       offset
     );
 
-    const comments: GetCommentType[] = response[0];
+    let comments: GetCommentType[] = response[0];
 
     let pagination: Pagination | null = null;
     let nextCommentId: number | null = null;
@@ -159,7 +159,7 @@ export const getCommentsByPostId = async (req: Request, res: Response) => {
       nextCommentId = comments[comments.length - 1].comment_id;
       pagination = {
         hasNextPage: true,
-        nextId: comments[comments.length - 1].comment_id,
+        nextId: comments[comments.length - 2].comment_id,
       };
       comments.pop();
     }
