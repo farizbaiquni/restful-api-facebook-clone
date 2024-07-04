@@ -153,12 +153,12 @@ export const getPostsModel = async (
       p.total_shares
     FROM posts p 
     JOIN users u ON p.user_id = u.user_id 
-    WHERE p.audience_type_id = ? AND p.post_id > ? AND p.is_deleted = 0 AND p.user_id != ?
+    WHERE p.audience_type_id = ? AND p.post_id > ? AND p.is_deleted = 0 
     GROUP BY p.post_id, p.user_id, p.content, p.emoji, p.activity_icon_url, p.gif_url, p.latitude, p.longitude, p.location_name, p.audience_type_id, p.created_at, p.updated_at, u.first_name, u.last_name, u.profile_picture 
     ORDER BY p.created_at DESC
     LIMIT ?;`;
 
-    return await connection.query(sqlQuery, [2, offset, userId, limit + 1]);
+    return await connection.query(sqlQuery, [2, offset, limit + 1]);
   } catch (error) {
     throw error;
   } finally {

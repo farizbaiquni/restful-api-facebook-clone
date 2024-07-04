@@ -116,6 +116,17 @@ export const getCommentsByPostIdModel = async (
       comments.parent_comment_id,
       comments.user_id,
       comments.content,
+      comments.is_deleted,
+      comments.deleted_at, 
+      comments.total_reactions,
+      comments.total_replies,
+      comments.total_shares,
+      comments.total_likes,
+      comments.total_loves,
+      comments.total_haha,
+      comments.total_wows,
+      comments.total_sads,
+      comments.total_angries,
       comments.created_at,
       comments.updated_at,
       comment_media.comment_media_id,
@@ -123,49 +134,7 @@ export const getCommentsByPostIdModel = async (
       comment_media.media_url,
       users.first_name,
       users.last_name,
-      users.profile_picture,
-      (
-        SELECT COUNT(*)
-        FROM comments AS replies
-        WHERE replies.parent_comment_id = comments.comment_id
-          AND replies.is_deleted = 0
-      ) AS total_replies,
-      (
-        SELECT COUNT(*)
-        FROM comment_reactions
-        WHERE comment_reactions.comment_id = comments.comment_id
-          AND comment_reactions.reaction_id = (SELECT reaction_id FROM reaction_type WHERE reaction_name = 'like')
-      ) AS total_like,
-      (
-        SELECT COUNT(*)
-        FROM comment_reactions
-        WHERE comment_reactions.comment_id = comments.comment_id
-          AND comment_reactions.reaction_id = (SELECT reaction_id FROM reaction_type WHERE reaction_name = 'love')
-      ) AS total_love,
-      (
-        SELECT COUNT(*)
-        FROM comment_reactions
-        WHERE comment_reactions.comment_id = comments.comment_id
-          AND comment_reactions.reaction_id = (SELECT reaction_id FROM reaction_type WHERE reaction_name = 'haha')
-      ) AS total_haha,
-      (
-        SELECT COUNT(*)
-        FROM comment_reactions
-        WHERE comment_reactions.comment_id = comments.comment_id
-          AND comment_reactions.reaction_id = (SELECT reaction_id FROM reaction_type WHERE reaction_name = 'wow')
-      ) AS total_wow,
-      (
-        SELECT COUNT(*)
-        FROM comment_reactions
-        WHERE comment_reactions.comment_id = comments.comment_id
-          AND comment_reactions.reaction_id = (SELECT reaction_id FROM reaction_type WHERE reaction_name = 'sad')
-      ) AS total_sad,
-      (
-        SELECT COUNT(*)
-        FROM comment_reactions
-        WHERE comment_reactions.comment_id = comments.comment_id
-          AND comment_reactions.reaction_id = (SELECT reaction_id FROM reaction_type WHERE reaction_name = 'angry')
-      ) AS total_angry
+      users.profile_picture
     FROM comments
     LEFT JOIN comment_media ON comments.comment_id = comment_media.comment_id
     LEFT JOIN users ON comments.user_id = users.user_id
