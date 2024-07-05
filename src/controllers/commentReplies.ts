@@ -21,12 +21,29 @@ import {
   validateParams,
   validateParamsAsNumber,
 } from "../types/ResponsesType";
+import { AddCommentReplyType } from "../types/CommentRepliesType";
+import {
+  addCommentReplyModel,
+  deleteCommentReplyModel,
+  getCommentRepliesModel,
+  updateCommentReplyModel,
+} from "../models/commentRepliesModel";
 
 // Function to add comment to post
-export const addComment = async (req: Request, res: Response) => {
-  const requiredParams = ["user_id", "post_id"];
+export const addCommentReply = async (req: Request, res: Response) => {
+  const requiredParams = [
+    "user_id",
+    "post_id",
+    "tag_id_user_parent_comment",
+    "tag_name_user_parent_comment",
+  ];
 
-  if (!req.body.user_id || !req.body.post_id) {
+  if (
+    !req.body.user_id ||
+    !req.body.post_id ||
+    !req.body.tag_id_user_parent_comment ||
+    !req.body.tag_name_user_parent_comment
+  ) {
     const httpResponseCode = 400;
     const errors: ErrorType[] = validateParams(req.query, requiredParams);
     const errorObject: ErrorResponseType = {
@@ -41,6 +58,8 @@ export const addComment = async (req: Request, res: Response) => {
     user_id,
     post_id,
     parent_comment_id = null,
+    tag_id_user_parent_comment,
+    tag_name_user_parent_comment,
     content = "",
     media_type_id = null,
     media_url = null,
@@ -48,6 +67,7 @@ export const addComment = async (req: Request, res: Response) => {
 
   const userId = Number(user_id);
   const postId = Number(post_id);
+  const tagIdUserParentComment = Number(tag_id_user_parent_comment);
 
   if (content.length <= 0 && (media_type_id === null || media_url === null)) {
     const httpResponseCode = 400;
@@ -66,7 +86,7 @@ export const addComment = async (req: Request, res: Response) => {
     return res.status(httpResponseCode).json(errorObject);
   }
 
-  if (isNaN(userId) || isNaN(postId)) {
+  if (isNaN(userId) || isNaN(postId) || isNaN(tagIdUserParentComment)) {
     const httpResponseCode = 400;
     const errors: ErrorType[] = validateParamsAsNumber(
       req.query,
@@ -80,15 +100,17 @@ export const addComment = async (req: Request, res: Response) => {
     return res.status(httpResponseCode).json(errorObject);
   }
 
-  const comment: AddCommentType = {
+  const comment: AddCommentReplyType = {
+    user_id: userId,
     post_id: postId,
     parent_comment_id: parent_comment_id,
-    user_id: userId,
+    tag_id_user_parent_comment: tagIdUserParentComment,
+    tag_name_user_parent_comment: tag_name_user_parent_comment,
     content: content,
   };
 
   try {
-    const response: any = await addCommentModel(
+    const response: any = await addCommentReplyModel(
       comment,
       media_type_id,
       media_url
@@ -97,7 +119,7 @@ export const addComment = async (req: Request, res: Response) => {
     const successObject: SuccessResponseType<GetCommentType> = {
       status: "success",
       code: httpResponseCode,
-      message: "Add comment successful",
+      message: "Add comment reply successful",
       data: response[0][0],
       pagination: null,
     };
@@ -108,11 +130,11 @@ export const addComment = async (req: Request, res: Response) => {
 };
 
 // Function to get comments by post id
-export const getCommentsByPostId = async (req: Request, res: Response) => {
-  const requiredParams = ["postId"];
-  const requiredParamsAreNumber = ["postId", "offset", "limit"];
+export const getCommentReplies = async (req: Request, res: Response) => {
+  const requiredParams = ["parentCommentId"];
+  const requiredParamsAreNumber = ["parentCommentId", "offset", "limit"];
 
-  if (!req.query.postId) {
+  if (!req.query.parentCommentId) {
     const httpResponseCode = 400;
     const errors: ErrorType[] = validateParams(req.query, requiredParams);
     const errorObject: ErrorResponseType = {
@@ -125,11 +147,11 @@ export const getCommentsByPostId = async (req: Request, res: Response) => {
 
   let { offset = 0, limit = 5 } = req.query;
 
-  const postId = Number(req.query.postId);
+  const parentCommentId = Number(req.query.parentCommentId);
   offset = Number(offset);
   limit = Number(limit);
 
-  if (isNaN(postId) || isNaN(offset) || isNaN(limit)) {
+  if (isNaN(parentCommentId) || isNaN(offset) || isNaN(limit)) {
     const httpResponseCode = 400;
     const errors: ErrorType[] = validateParamsAsNumber(
       req.query,
@@ -144,8 +166,8 @@ export const getCommentsByPostId = async (req: Request, res: Response) => {
   }
 
   try {
-    const response: any[] = await getCommentsByPostIdModel(
-      postId,
+    const response: any[] = await getCommentRepliesModel(
+      parentCommentId,
       limit,
       offset
     );
@@ -180,7 +202,7 @@ export const getCommentsByPostId = async (req: Request, res: Response) => {
 };
 
 // Function to delete comment
-export const deleteComment = async (req: Request, res: Response) => {
+export const deleteCommentReply = async (req: Request, res: Response) => {
   const requiredParams = ["postId", "commentId", "userId"];
 
   if ((!req.query.postId && !req.query.commentId) || !req.query.userId) {
@@ -213,7 +235,7 @@ export const deleteComment = async (req: Request, res: Response) => {
   }
 
   try {
-    const response = await deleteCommentModel(postId, commentId, userId);
+    const response = await deleteCommentReplyModel(postId, commentId, userId);
 
     if (response.affectedRows === 0) {
       const httpResponseCode = 404;
@@ -250,7 +272,7 @@ export const deleteComment = async (req: Request, res: Response) => {
 };
 
 // Function to update comment
-export const updateComment = async (req: Request, res: Response) => {
+export const updateCommentReply = async (req: Request, res: Response) => {
   const requiredParams = ["comment_id", "user_id"];
 
   if (!req.body.comment_id || !req.body.user_id) {
@@ -307,7 +329,7 @@ export const updateComment = async (req: Request, res: Response) => {
   }
 
   try {
-    const response = await updateCommentModel(
+    const response = await updateCommentReplyModel(
       comment_id,
       user_id,
       content,
@@ -343,7 +365,7 @@ export const updateComment = async (req: Request, res: Response) => {
     const successObject: SuccessResponseType<UpdateCommentType> = {
       status: "success",
       code: httpResponseCode,
-      message: "Update a comment successful",
+      message: "Update a comment reply successful",
       data: dataObject,
       pagination: null,
     };

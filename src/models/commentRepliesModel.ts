@@ -1,41 +1,41 @@
 import { RowDataPacket } from "mysql2";
 import { getConnection } from "../configs/database";
-import { AddCommentType } from "../types/CommentType";
 import { CommentMediaTableType } from "../types/MediaType";
+import { AddCommentReplyType } from "../types/CommentRepliesType";
 
-export const addCommentModel = async (
-  comment: AddCommentType,
+export const addCommentReplyModel = async (
+  comment: AddCommentReplyType,
   mediaTypeId: number | null,
   mediaUrl: string | null
 ) => {
-  const sqlAddComment = "INSERT INTO comments SET ?";
-  const sqlAddCommentMedia = "INSERT INTO comment_media SET ?";
-  const sqlGetCommentById = `
-      SELECT 
-        comments.comment_id,
-        comments.post_id,
-        comments.parent_comment_id,
-        comments.user_id,
-        comments.content,
-        comments.is_deleted,
-        comments.deleted_at, 
-        comments.total_reactions,
-        comments.total_replies,
-        comments.total_shares,
-        comments.total_likes,
-        comments.total_loves,
-        comments.total_haha,
-        comments.total_wows,
-        comments.total_sads,
-        comments.total_angries,
-        comments.created_at,
-        comments.updated_at,
-        comment_media.comment_media_id,
-        comment_media.media_type_id,
-        comment_media.media_url,
-        users.first_name,
-        users.last_name,
-        users.profile_picture
+  const sqlAddCommentReplies = "INSERT INTO comments SET ?";
+  const sqlAddCommentRepliesMedia = "INSERT INTO comment_media SET ?";
+  const sqlGetCommentRepliesById = `
+        SELECT 
+            comments.comment_id,
+            comments.post_id,
+            comments.parent_comment_id,
+            comments.user_id,
+            comments.content,
+            comments.is_deleted,
+            comments.deleted_at, 
+            comments.total_reactions,
+            comments.total_replies,
+            comments.total_shares,
+            comments.total_likes,
+            comments.total_loves,
+            comments.total_haha,
+            comments.total_wows,
+            comments.total_sads,
+            comments.total_angries,
+            comments.created_at,
+            comments.updated_at,
+            comment_media.comment_media_id,
+            comment_media.media_type_id,
+            comment_media.media_url,
+            users.first_name,
+            users.last_name,
+            users.profile_picture
         FROM comments
         LEFT JOIN comment_media ON comments.comment_id = comment_media.comment_id
         LEFT JOIN users ON comments.user_id = users.user_id
@@ -49,7 +49,7 @@ export const addCommentModel = async (
 
     await connection.beginTransaction();
 
-    const [result]: any = await connection.query(sqlAddComment, comment);
+    const [result]: any = await connection.query(sqlAddCommentReplies, comment);
     const commentId: number = Number(result.insertId);
 
     if (mediaTypeId !== null && mediaUrl !== null) {
@@ -58,10 +58,12 @@ export const addCommentModel = async (
         media_type_id: mediaTypeId,
         media_url: mediaUrl,
       };
-      await connection.query(sqlAddCommentMedia, commentMediaObj);
+      await connection.query(sqlAddCommentRepliesMedia, commentMediaObj);
     }
 
-    const response = await connection.execute(sqlGetCommentById, [commentId]);
+    const response = await connection.execute(sqlGetCommentRepliesById, [
+      commentId,
+    ]);
 
     await connection.commit();
 
@@ -74,12 +76,12 @@ export const addCommentModel = async (
   }
 };
 
-export const getCommentsByPostIdModel = async (
-  postId: number,
+export const getCommentRepliesModel = async (
+  parentCommentId: number,
   limit: number,
   offset: number
 ) => {
-  const sqlQueryGetComments = `
+  const sqlQuery = `
     SELECT 
       comments.comment_id,
       comments.post_id,
@@ -108,15 +110,15 @@ export const getCommentsByPostIdModel = async (
     FROM comments
     LEFT JOIN comment_media ON comments.comment_id = comment_media.comment_id
     LEFT JOIN users ON comments.user_id = users.user_id
-    WHERE comments.post_id = ? AND comments.is_deleted = 0
+    WHERE comments.parent_comment_id = ? AND comments.is_deleted = 0
     ORDER BY comments.total_reactions DESC
     LIMIT ?
     OFFSET ?`;
   let connection;
   try {
     connection = await getConnection();
-    return await connection.query<RowDataPacket[]>(sqlQueryGetComments, [
-      postId,
+    return await connection.query<RowDataPacket[]>(sqlQuery, [
+      parentCommentId,
       limit + 1,
       offset,
     ]);
@@ -127,7 +129,7 @@ export const getCommentsByPostIdModel = async (
   }
 };
 
-export const deleteCommentModel = async (
+export const deleteCommentReplyModel = async (
   postId: number,
   commentId: number,
   userId: number
@@ -158,7 +160,7 @@ export const deleteCommentModel = async (
   }
 };
 
-export const updateCommentModel = async (
+export const updateCommentReplyModel = async (
   comment_id: number,
   user_id: number,
   content: string,

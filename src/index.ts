@@ -8,6 +8,7 @@ import { postReactionsRouter } from "./routes/postReactions";
 import { commmentsRouter } from "./routes/comments";
 import { routerAuths } from "./routes/auths";
 import { CommentReactionsRouter } from "./routes/commentReaction";
+import { commmentRepliesRouter } from "./routes/commentReplies";
 
 const app = express();
 app.use(cookieParser());
@@ -40,6 +41,9 @@ app.use(commmentsRouter);
 
 // Comment Reactions
 app.use(CommentReactionsRouter);
+
+// Comment Replies
+app.use(commmentRepliesRouter);
 
 // Verify token JWT for login
 app.use(verifyTokenJWTRouter);
